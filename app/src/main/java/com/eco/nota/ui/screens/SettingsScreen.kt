@@ -101,7 +101,6 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
     var showBusinessProfile by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showBackupScreen by remember { mutableStateOf(false) }
-    var showUpdateSettings by remember { mutableStateOf(false) }
 
     if (showBusinessProfile) {
         BusinessProfileScreen(viewModel = viewModel, onDismiss = { showBusinessProfile = false })
@@ -113,15 +112,6 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
     
     if (showBackupScreen) {
         BackupRestoreScreen(viewModel = viewModel, onDismiss = { showBackupScreen = false })
-    }
-
-    if (showUpdateSettings) {
-        val githubRepo by viewModel.githubRepo.collectAsState()
-        com.eco.nota.ui.components.GithubRepoDialog(
-            initialRepo = githubRepo,
-            onSave = { viewModel.setGithubRepo(it) },
-            onDismiss = { showUpdateSettings = false }
-        )
     }
 
     Dialog(
@@ -286,12 +276,6 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         subtitle = "Versi ${viewModel.currentAppVersion} Pro • Lihat What's New & Info",
                         onClick = { showAboutDialog = true }
                     )
-                    SettingsItem(
-                        icon = Icons.Default.SystemUpdate,
-                        title = "Pembaruan Aplikasi",
-                        subtitle = "Periksa pembaruan dari GitHub",
-                        onClick = { showUpdateSettings = true }
-                    )
                 }
                 
                 Spacer(modifier = Modifier.height(30.dp))
@@ -303,7 +287,7 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Nota Kasir Pro Edition • Versi 1.5.0",
+                        "Nota Kasir Pro Edition • Versi 1.6.0",
                         style = NotaTheme.typography.label.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
                         color = TextGray
                     )
@@ -812,7 +796,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                             border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
                         ) {
                             Text(
-                                "Versi 1.5.0 (Pro Edition)",
+                                "Versi 1.6.0 (Pro Edition)",
                                 style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
                                 color = Color(0xFFA5B4FC),
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -848,6 +832,14 @@ fun AboutDialog(onDismiss: () -> Unit) {
                         }
 
                         HorizontalDivider(color = ProBorder)
+
+                        WhatsNewItem(
+                            icon = Icons.Default.SystemUpdate,
+                            title = "Pembaruan Otomatis & In-App Update dari GitHub",
+                            description = "Notifikasi cerdas dan dialog unduh APK versi terbaru secara instan langsung dari rilis publik GitHub repository Anda."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
 
                         WhatsNewItem(
                             icon = Icons.Default.QrCode,
