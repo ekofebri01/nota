@@ -1,0 +1,6 @@
+{
+  "name": "Nota Kasir Pro",
+  "description": "Aplikasi Nota Kasir Profesional & Pembuat Struk Digital",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
