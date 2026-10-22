@@ -2,7 +2,10 @@ package com.eco.nota.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -359,6 +363,7 @@ fun DateSection(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BuyerInfoSection(
     name: String,
@@ -376,7 +381,19 @@ fun BuyerInfoSection(
         if (name.isBlank()) emptyList()
         else customerSuggestions.filter {
             it.name.contains(name, ignoreCase = true) && it.name.lowercase().trim() != name.lowercase().trim()
-        }.take(4)
+        }.take(15)
+    }
+    val customerBringIntoViewRequester = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(showSuggestions, filteredSuggestions.size, name) {
+        if (showSuggestions && filteredSuggestions.isNotEmpty()) {
+            delay(100)
+            try {
+                customerBringIntoViewRequester.bringIntoView()
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
     }
 
     Card(
@@ -416,7 +433,12 @@ fun BuyerInfoSection(
                 }
             }
             
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .bringIntoViewRequester(customerBringIntoViewRequester),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 NotaTextField(
                     value = name,
                     onValueChange = {
@@ -429,12 +451,39 @@ fun BuyerInfoSection(
                 
                 if (showSuggestions && filteredSuggestions.isNotEmpty()) {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 180.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = ProCardSurfaceLight),
                         border = BorderStroke(1.dp, ProBorder)
                     ) {
-                        Column {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(ProCardSurface)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "RIWAYAT PELANGGAN (${filteredSuggestions.size})",
+                                    style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold),
+                                    color = Color(0xFFA5B4FC)
+                                )
+                                Text(
+                                    "Bisa di-scroll ↕",
+                                    style = NotaTheme.typography.label.copy(fontSize = 10.sp),
+                                    color = TextGray
+                                )
+                            }
+                            HorizontalDivider(color = ProBorder)
+
                             filteredSuggestions.forEach { sugg ->
                                 Row(
                                     modifier = Modifier
@@ -652,7 +701,19 @@ fun ItemsSection(
                         if (item.name.isBlank()) emptyList()
                         else productSuggestions.filter {
                             it.name.contains(item.name, ignoreCase = true) && it.name.lowercase().trim() != item.name.lowercase().trim()
-                        }.take(3)
+                        }.take(20)
+                    }
+                    val prodBringIntoViewRequester = remember { BringIntoViewRequester() }
+
+                    LaunchedEffect(showProductSuggestions, filteredProdSuggestions.size, item.name) {
+                        if (showProductSuggestions && filteredProdSuggestions.isNotEmpty()) {
+                            delay(120)
+                            try {
+                                prodBringIntoViewRequester.bringIntoView()
+                            } catch (e: Exception) {
+                                // ignore
+                            }
+                        }
                     }
 
                     Card(
@@ -721,8 +782,13 @@ fun ItemsSection(
                                 }
                             }
 
-                            // 1. Nama Barang Field (Dengan Auto-Focus!)
-                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            // 1. Nama Barang Field (Dengan Auto-Focus & Auto Bring-into-View)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .bringIntoViewRequester(prodBringIntoViewRequester),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
                                 OutlinedTextField(
                                     value = item.name,
                                     onValueChange = {
@@ -748,12 +814,40 @@ fun ItemsSection(
                                 
                                 if (showProductSuggestions && filteredProdSuggestions.isNotEmpty()) {
                                     Card(
-                                        modifier = Modifier.fillMaxWidth().heightIn(max = 150.dp),
-                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(max = 200.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                                        border = BorderStroke(1.dp, ProBorder)
+                                        border = BorderStroke(1.5.dp, AccentBlue.copy(alpha = 0.8f))
                                     ) {
-                                        Column {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .verticalScroll(rememberScrollState())
+                                        ) {
+                                            // Header
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(ProCardSurfaceLight)
+                                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    "PILIHAN PRODUK (${filteredProdSuggestions.size})",
+                                                    style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                                                    color = Color(0xFFA5B4FC)
+                                                )
+                                                Text(
+                                                    "Bisa di-scroll ↕",
+                                                    style = NotaTheme.typography.label.copy(fontSize = 10.5.sp),
+                                                    color = TextGray
+                                                )
+                                            }
+                                            HorizontalDivider(color = ProBorder)
+
                                             filteredProdSuggestions.forEach { sugg ->
                                                 Row(
                                                     modifier = Modifier
@@ -762,19 +856,31 @@ fun ItemsSection(
                                                             onProductSelected(index, sugg)
                                                             showProductSuggestions = false
                                                         }
-                                                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
                                                     horizontalArrangement = Arrangement.SpaceBetween,
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(Icons.Default.Sell, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(14.dp))
-                                                        Text(sugg.name, style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp), color = Color.White)
+                                                    Row(
+                                                        modifier = Modifier.weight(1f),
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(Icons.Default.Sell, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(15.dp))
+                                                        Text(
+                                                            sugg.name,
+                                                            style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                                                            color = Color.White
+                                                        )
                                                     }
                                                     val priceText = if (sugg.price.isNotEmpty()) "Rp ${formatNumber(sugg.price.toLongOrNull() ?: 0L)}" else ""
-                                                    val unitText = if (sugg.unit.isNotEmpty()) " (${sugg.unit})" else ""
-                                                    Text("$priceText$unitText", style = NotaTheme.typography.label.copy(fontSize = 11.5.sp), color = AccentEmerald)
+                                                    val unitText = if (sugg.unit.isNotEmpty()) " / ${sugg.unit}" else ""
+                                                    Text(
+                                                        "$priceText$unitText",
+                                                        style = NotaTheme.typography.label.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                                                        color = AccentEmerald
+                                                    )
                                                 }
-                                                HorizontalDivider(color = ProBorder)
+                                                HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
                                             }
                                         }
                                     }

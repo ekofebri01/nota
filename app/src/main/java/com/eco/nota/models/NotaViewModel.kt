@@ -155,7 +155,7 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
     private val _deletedUnits = MutableStateFlow(loadDeletedUnits())
     val deletedUnits: StateFlow<Set<String>> = _deletedUnits
 
-    val currentAppVersion: String = "1.6.0"
+    val currentAppVersion: String = "1.6.2"
 
     private val _githubRepo = MutableStateFlow("ekofebri01/nota")
     val githubRepo: StateFlow<String> = _githubRepo

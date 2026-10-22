@@ -6,13 +6,17 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.io.BufferedInputStream
 
 data class AppUpdateInfo(
     val hasUpdate: Boolean,
@@ -191,6 +195,68 @@ object UpdateManager {
                 Toast.LENGTH_LONG
             ).show()
             false
+        }
+    }
+
+    suspend fun downloadApkToInternalStorage(
+        context: Context,
+        downloadUrl: String,
+        fileName: String,
+        onProgress: (Int) -> Unit
+    ): File? = withContext(Dispatchers.IO) {
+        try {
+            val safeFileName = if (fileName.endsWith(".apk", ignoreCase = true)) fileName else "$fileName.apk"
+            val file = File(context.cacheDir, safeFileName)
+            
+            val url = URL(downloadUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.connect()
+            
+            val fileLength = connection.contentLength
+            val input = BufferedInputStream(url.openStream())
+            val output = FileOutputStream(file)
+            
+            val data = ByteArray(1024)
+            var total: Long = 0
+            var count: Int
+            while (input.read(data).also { count = it } != -1) {
+                total += count.toLong()
+                if (fileLength > 0) {
+                    onProgress((total * 100 / fileLength).toInt())
+                }
+                output.write(data, 0, count)
+            }
+            
+            output.flush()
+            output.close()
+            input.close()
+            connection.disconnect()
+            
+            file
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun installApk(context: Context, file: File) {
+        try {
+            val apkUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(intent)
+            
+            // Delete the file after initiating installation
+            file.deleteOnExit() 
+        } catch (e: Exception) {
+            Toast.makeText(context, "Gagal memulai instalasi: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
 

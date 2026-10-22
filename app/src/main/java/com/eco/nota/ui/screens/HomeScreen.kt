@@ -164,16 +164,6 @@ fun HomeScreen(
                 }
             }
 
-            if (updateInfo?.hasUpdate == true) {
-                item {
-                    com.eco.nota.ui.components.UpdateBannerCard(
-                        updateInfo = updateInfo,
-                        onClick = onUpdateClick,
-                        onDismiss = onDismissUpdate
-                    )
-                }
-            }
-
             // Financial Summary Card
             item {
                 Card(

@@ -64,6 +64,9 @@ import com.eco.nota.ui.theme.TextGray
 import com.eco.nota.ui.theme.TextMuted
 import com.eco.nota.utils.AppUpdateInfo
 import com.eco.nota.utils.UpdateManager
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.widget.Toast
 
 @Composable
 fun UpdateAvailableDialog(
@@ -213,29 +216,61 @@ fun UpdateAvailableDialog(
 
                 // Action Buttons
                 if (updateInfo.apkDownloadUrl != null) {
+                    var isDownloading by remember { mutableStateOf(false) }
+                    var downloadProgress by remember { mutableStateOf(0) }
+                    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+
                     Button(
                         onClick = {
-                            val fileName = updateInfo.apkFileName ?: "NotaKasirPro-${updateInfo.latestVersion}.apk"
-                            UpdateManager.downloadApkWithDownloadManager(
-                                context = context,
-                                downloadUrl = updateInfo.apkDownloadUrl,
-                                fileName = fileName
-                            )
-                            onDismiss()
+                            isDownloading = true
+                            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                val fileName = updateInfo.apkFileName ?: "NotaKasirPro-${updateInfo.latestVersion}.apk"
+                                val downloadedFile = UpdateManager.downloadApkToInternalStorage(
+                                    context = context,
+                                    downloadUrl = updateInfo.apkDownloadUrl,
+                                    fileName = fileName,
+                                    onProgress = { progress -> downloadProgress = progress }
+                                )
+                                
+                                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                    isDownloading = false
+                                    if (downloadedFile != null) {
+                                        UpdateManager.installApk(context, downloadedFile)
+                                        onDismiss()
+                                    } else {
+                                        Toast.makeText(context, "Gagal mengunduh APK", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
+                        enabled = !isDownloading,
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isDownloading) TextGray else AccentEmerald),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Download APK Sekarang",
-                            style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.5.sp),
-                            color = Color.Black
-                        )
+                        if (isDownloading) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                progress = { downloadProgress / 100f },
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Mengunduh... ${downloadProgress}%",
+                                style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.5.sp),
+                                color = Color.White
+                            )
+                        } else {
+                            Icon(Icons.Default.Download, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Install Pembaruan",
+                                style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.5.sp),
+                                color = Color.Black
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))

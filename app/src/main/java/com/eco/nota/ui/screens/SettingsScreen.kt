@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CheckCircle
@@ -287,7 +288,7 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Nota Kasir Pro Edition • Versi 1.6.0",
+                        "Nota Kasir Pro Edition • Versi 1.6.1",
                         style = NotaTheme.typography.label.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
                         color = TextGray
                     )
@@ -796,7 +797,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                             border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
                         ) {
                             Text(
-                                "Versi 1.6.0 (Pro Edition)",
+                                "Versi 1.6.1 (Pro Edition)",
                                 style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
                                 color = Color(0xFFA5B4FC),
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -832,6 +833,14 @@ fun AboutDialog(onDismiss: () -> Unit) {
                         }
 
                         HorizontalDivider(color = ProBorder)
+
+                        WhatsNewItem(
+                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                            title = "Preview Produk Anti-Ketutup Keyboard & Live Struk",
+                            description = "Rekomendasi barang otomatis bergeser di atas keyboard, list produk kini bisa di-scroll bebas, serta tombol Preview Struk Real-Time."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
 
                         WhatsNewItem(
                             icon = Icons.Default.SystemUpdate,

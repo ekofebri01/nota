@@ -48,8 +48,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -89,6 +92,8 @@ import java.util.Locale
 fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val savedNotas by viewModel.notas.collectAsState()
+    val businessProfile by viewModel.businessProfile.collectAsState()
+    var showLiveReceiptPreview by remember { mutableStateOf(false) }
 
     // 1. Unique Customers Suggestion list
     val customerSuggestions = remember(savedNotas) {
@@ -292,6 +297,25 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                },
+                actions = {
+                    Surface(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .clickable { showLiveReceiptPreview = true },
+                        shape = RoundedCornerShape(10.dp),
+                        color = AccentBlue.copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                            Text("Preview Struk", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp), color = Color(0xFFA5B4FC))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
@@ -546,7 +570,88 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(140.dp))
+        }
+    }
+
+    if (showLiveReceiptPreview) {
+        val liveNota = Nota(
+            id = notaToEdit?.id ?: "NOTA_${System.currentTimeMillis()}",
+            referenceCode = referenceCode.ifBlank { "INV-PREVIEW" },
+            customerName = customerName.ifBlank { "Pelanggan Umum" },
+            phoneNumber = phoneNumber,
+            address = address,
+            date = selectedDate,
+            total = "Rp ${formatCurrency(grandTotal)}",
+            status = status,
+            subtotal = subtotal,
+            discount = discVal,
+            shippingCost = shipVal,
+            paymentMethod = paymentMethod,
+            notes = notes,
+            items = items.filter { it.name.isNotBlank() }.ifEmpty { items }
+        )
+
+        Dialog(
+            onDismissRequest = { showLiveReceiptPreview = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Scaffold(
+                containerColor = ProBackground,
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Preview Struk Real-Time", style = NotaTheme.typography.heading, color = Color.White) },
+                        navigationIcon = {
+                            IconButton(onClick = { showLiveReceiptPreview = false }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.White)
+                            }
+                        },
+                        actions = {
+                            TextButton(
+                                onClick = {
+                                    showLiveReceiptPreview = false
+                                    saveNotaAction()
+                                }
+                            ) {
+                                Text("Simpan", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, color = AccentEmerald, fontSize = 15.sp))
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
+                    )
+                }
+            ) { padding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        "Tampilan struk otomatis terupdate saat Anda mengetik produk & harga.",
+                        style = NotaTheme.typography.label.copy(fontSize = 12.sp),
+                        color = TextGray
+                    )
+
+                    ThermalReceiptView(
+                        nota = liveNota,
+                        businessProfile = businessProfile
+                    )
+
+                    Button(
+                        onClick = { showLiveReceiptPreview = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = ProCardSurfaceLight),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("Kembali ke Formulir", style = NotaTheme.typography.body.copy(color = Color.White, fontWeight = FontWeight.Bold))
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+                }
+            }
         }
     }
 }
