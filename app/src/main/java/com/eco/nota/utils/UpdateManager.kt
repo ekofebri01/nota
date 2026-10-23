@@ -39,13 +39,14 @@ object UpdateManager {
      */
     fun isNewerVersion(latest: String, current: String): Boolean {
         try {
-            val cleanLatest = latest.trim().removePrefix("v").removePrefix("V")
-            val cleanCurrent = current.trim().removePrefix("v").removePrefix("V")
+            // Bersihkan prefix seperti "v", "V", "v.", "V.", atau teks lain sebelum angka pertama
+            val cleanLatest = latest.trim().dropWhile { !it.isDigit() }
+            val cleanCurrent = current.trim().dropWhile { !it.isDigit() }
 
             val latestParts = cleanLatest.split(".")
-                .map { part -> part.takeWhile { it.isDigit() }.toIntOrNull() ?: 0 }
+                .mapNotNull { part -> part.filter { it.isDigit() }.takeIf { it.isNotEmpty() }?.toIntOrNull() }
             val currentParts = cleanCurrent.split(".")
-                .map { part -> part.takeWhile { it.isDigit() }.toIntOrNull() ?: 0 }
+                .mapNotNull { part -> part.filter { it.isDigit() }.takeIf { it.isNotEmpty() }?.toIntOrNull() }
 
             val maxLen = maxOf(latestParts.size, currentParts.size)
             for (i in 0 until maxLen) {

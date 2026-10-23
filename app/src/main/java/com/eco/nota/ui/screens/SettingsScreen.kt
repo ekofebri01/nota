@@ -55,6 +55,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -98,6 +99,7 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
+    val context = LocalContext.current
     val businessProfile by viewModel.businessProfile.collectAsState()
     var showBusinessProfile by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -108,7 +110,7 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
     }
     
     if (showAboutDialog) {
-        AboutDialog(onDismiss = { showAboutDialog = false })
+        AboutDialog(viewModel = viewModel, onDismiss = { showAboutDialog = false })
     }
     
     if (showBackupScreen) {
@@ -271,6 +273,18 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         subtitle = "Hubungkan printer kasir 58mm / 80mm",
                         onClick = { Toast.makeText(viewModel.getApplication(), "Mencari printer thermal bluetooth...", Toast.LENGTH_SHORT).show() }
                     )
+                    val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
+                    val updateInfo by viewModel.updateInfo.collectAsState()
+                    SettingsItem(
+                        icon = Icons.Default.SystemUpdate,
+                        title = "Pembaruan Aplikasi (GitHub)",
+                        subtitle = if (isCheckingUpdate) "Sedang memeriksa pembaruan..." else if (updateInfo?.hasUpdate == true) "Versi baru ${updateInfo?.latestVersion} tersedia! Ketuk untuk perbarui" else "Versi ${viewModel.currentAppVersion} • Ketuk untuk periksa rilis terbaru",
+                        onClick = {
+                            viewModel.checkForUpdates(manual = true) { hasUpdate, msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
                     SettingsItem(
                         icon = Icons.Default.Info,
                         title = "Tentang & Catatan Pembaruan",
@@ -288,7 +302,7 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Nota Kasir Pro Edition • Versi 1.6.1",
+                        "Nota Kasir Pro Edition • Versi 1.6.3",
                         style = NotaTheme.typography.label.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
                         color = TextGray
                     )
@@ -739,7 +753,10 @@ fun WhatsNewItem(icon: ImageVector, title: String, description: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutDialog(onDismiss: () -> Unit) {
+fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val isChecking by viewModel.isCheckingUpdate.collectAsState()
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -797,7 +814,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                             border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
                         ) {
                             Text(
-                                "Versi 1.6.1 (Pro Edition)",
+                                "Versi ${viewModel.currentAppVersion} (Pro Edition)",
                                 style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
                                 color = Color(0xFFA5B4FC),
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -810,6 +827,33 @@ fun AboutDialog(onDismiss: () -> Unit) {
                             color = TextGray,
                             textAlign = TextAlign.Center
                         )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = {
+                                viewModel.checkForUpdates(manual = true) { hasUpdate, msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            enabled = !isChecking,
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            if (isChecking) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Memeriksa Pembaruan...", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                            } else {
+                                Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Periksa Pembaruan Sekarang", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                            }
+                        }
                     }
                 }
 

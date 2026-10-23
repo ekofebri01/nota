@@ -250,9 +250,9 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
     var notes by remember { mutableStateOf(notaToEdit?.notes ?: "") }
 
     val subtotal = items.sumOf {
-        val qty = it.quantity.toLongOrNull() ?: 0L
+        val qty = it.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
         val price = it.price.toLongOrNull() ?: 0L
-        qty * price
+        (qty * price).toLong()
     }
 
     val discVal = discount.toLongOrNull() ?: 0L

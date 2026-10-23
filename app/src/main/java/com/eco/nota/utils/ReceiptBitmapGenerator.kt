@@ -491,17 +491,18 @@ object ReceiptBitmapGenerator {
         y += 42f
 
         for (item in nota.items) {
-            val qty = item.quantity.toLongOrNull() ?: 1L
+            val qty = item.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 1.0
             val price = item.price.toLongOrNull() ?: 0L
-            val itemTotal = qty * price
+            val itemTotal = (qty * price).toLong()
             val unitStr = if (item.unit.isNotEmpty()) " ${item.unit}" else ""
+            val qtyStr = if (item.quantity.isNotBlank()) item.quantity else (if (qty % 1.0 == 0.0) qty.toLong().toString() else qty.toString())
 
             // Line 1: Item Name
             canvas.drawText(item.name, padding, y, boldTextPaint)
             y += 36f
 
             // Line 2: Unit calculation neatly aligned on left, total on right
-            canvas.drawText("$qty$unitStr x Rp ${formatCurrency(price)}", padding + 8f, y, regularTextPaint)
+            canvas.drawText("$qtyStr$unitStr x Rp ${formatCurrency(price)}", padding + 8f, y, regularTextPaint)
             canvas.drawText("Rp ${formatCurrency(itemTotal)}", width - padding, y, rightAlignBoldPaint)
             y += 44f
         }

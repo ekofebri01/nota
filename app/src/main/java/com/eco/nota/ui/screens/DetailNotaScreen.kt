@@ -591,11 +591,11 @@ fun ThermalReceiptView(
 
             // 6. Items
             nota.items.forEach { item ->
-                Spacer(modifier = Modifier.height(6.dp))
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    val qty = item.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 1.0
+                    val itemTotal = (qty * (item.price.toLongOrNull() ?: 0L)).toLong()
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(item.name, style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)), modifier = Modifier.weight(1f))
-                        val itemTotal = (item.quantity.toLongOrNull() ?: 1L) * (item.price.toLongOrNull() ?: 0L)
                         Text("Rp ${formatCurrency(itemTotal)}", style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)), textAlign = TextAlign.End, modifier = Modifier.width(90.dp))
                     }
                     val unitStr = if (item.unit.isNotEmpty()) " ${item.unit}" else ""
@@ -817,7 +817,8 @@ fun ExecutiveDarkReceiptView(
                         Text(item.name, style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold), color = Color.White)
                         Text("${item.quantity} ${item.unit} @ Rp ${formatCurrency(item.price.toLongOrNull() ?: 0L)}", style = NotaTheme.typography.label.copy(fontSize = 11.sp), color = TextGray)
                     }
-                    val itemTotal = (item.quantity.toLongOrNull() ?: 1L) * (item.price.toLongOrNull() ?: 0L)
+                    val qty = item.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 1.0
+                    val itemTotal = (qty * (item.price.toLongOrNull() ?: 0L)).toLong()
                     Text("Rp ${formatCurrency(itemTotal)}", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold), color = Color.White)
                 }
             }

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -553,6 +554,7 @@ fun ItemsSection(
 
     // Which item is actively opened in full detail mode (default: first item if empty, or newly added item)
     var editingIndex by remember { mutableStateOf<Int?>(if (items.size == 1 && items[0].name.isBlank()) 0 else null) }
+    var unitToDelete by remember { mutableStateOf<String?>(null) }
     val focusRequester = remember { FocusRequester() }
 
     // When editingIndex changes to a valid item, request focus with slight delay
@@ -610,9 +612,9 @@ fun ItemsSection(
             // Items List (Compact Rows vs Expanded Editing Card)
             items.forEachIndexed { index, item ->
                 val isEditing = editingIndex == index
-                val currentQty = item.quantity.toLongOrNull() ?: 1L
+                val currentQty = item.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 1.0
                 val currentPrice = item.price.toLongOrNull() ?: 0L
-                val itemSubtotal = currentQty * currentPrice
+                val itemSubtotal = (currentQty * currentPrice).toLong()
 
                 if (!isEditing) {
                     // ==========================================
@@ -905,9 +907,10 @@ fun ItemsSection(
                                             modifier = Modifier
                                                 .size(36.dp)
                                                 .clickable {
-                                                    val current = item.quantity.toLongOrNull() ?: 1L
-                                                    if (current > 1) {
-                                                        onItemChanged(index, item.copy(quantity = (current - 1).toString()))
+                                                    val current = item.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 1.0
+                                                    if (current > 1.0) {
+                                                        val next = if (current % 1.0 == 0.0) (current - 1).toLong().toString() else (current - 1).toString()
+                                                        onItemChanged(index, item.copy(quantity = next))
                                                     }
                                                 },
                                             shape = RoundedCornerShape(8.dp),
@@ -924,15 +927,16 @@ fun ItemsSection(
                                             onValueChange = { onItemChanged(index, item.copy(quantity = it)) },
                                             placeholder = "1",
                                             modifier = Modifier.weight(1f),
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                                         )
 
                                         Surface(
                                             modifier = Modifier
                                                 .size(36.dp)
                                                 .clickable {
-                                                    val current = item.quantity.toLongOrNull() ?: 1L
-                                                    onItemChanged(index, item.copy(quantity = (current + 1).toString()))
+                                                    val current = item.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 1.0
+                                                    val next = if (current % 1.0 == 0.0) (current + 1).toLong().toString() else (current + 1).toString()
+                                                    onItemChanged(index, item.copy(quantity = next))
                                                 },
                                             shape = RoundedCornerShape(8.dp),
                                             color = ProCardSurface,
@@ -959,14 +963,83 @@ fun ItemsSection(
 
                             // 3. Quick Saved Units List
                             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val displayedUnits = allUnits.filter { it !in deletedUnits }
+
+                                if (unitToDelete != null) {
+                                    AlertDialog(
+                                        onDismissRequest = { unitToDelete = null },
+                                        containerColor = ProCardSurface,
+                                        title = {
+                                            Text("Hapus Satuan?", style = NotaTheme.typography.heading.copy(fontSize = 16.sp), color = Color.White)
+                                        },
+                                        text = {
+                                            Text("Hapus satuan '${unitToDelete}' dari daftar pilihan cepat?", style = NotaTheme.typography.body, color = TextGray)
+                                        },
+                                        confirmButton = {
+                                            Button(
+                                                onClick = {
+                                                    val toDelete = unitToDelete!!
+                                                    onDeleteUnit(toDelete)
+                                                    if (item.unit.equals(toDelete, ignoreCase = true)) {
+                                                        onItemChanged(index, item.copy(unit = ""))
+                                                    }
+                                                    unitToDelete = null
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = AccentRose),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Text("Hapus", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                                            }
+                                        },
+                                        dismissButton = {
+                                            OutlinedButton(
+                                                onClick = { unitToDelete = null },
+                                                shape = RoundedCornerShape(8.dp),
+                                                border = BorderStroke(1.dp, ProBorder)
+                                            ) {
+                                                Text("Batal", style = NotaTheme.typography.label.copy(color = TextGray))
+                                            }
+                                        }
+                                    )
+                                }
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("PILIH SATUAN :", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp), color = TextMuted)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text("PILIH SATUAN :", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp), color = TextMuted)
+                                        Text("(Tahan lama utk hapus)", style = NotaTheme.typography.label.copy(fontSize = 9.5.sp), color = TextGray)
+                                    }
+
                                     if (item.unit.isNotEmpty()) {
-                                        Text("Terpilih: ${item.unit}", style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text("Terpilih: ${item.unit}", style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                                            if (displayedUnits.contains(item.unit)) {
+                                                Surface(
+                                                    modifier = Modifier.clickable { unitToDelete = item.unit },
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = AccentRose.copy(alpha = 0.15f),
+                                                    border = BorderStroke(1.dp, AccentRose.copy(alpha = 0.35f))
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.Delete, contentDescription = "Hapus Satuan", tint = AccentRose, modifier = Modifier.size(11.dp))
+                                                        Text("Hapus", style = NotaTheme.typography.label.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold), color = AccentRose)
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
@@ -974,42 +1047,35 @@ fun ItemsSection(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                        val displayedUnits = allUnits.filter { it !in deletedUnits }
-
-                                        // ... inside ItemsSection ...
-                                        displayedUnits.forEach { u ->
-                                            val isSelected = item.unit.equals(u, ignoreCase = true)
-                                            Surface(
-                                                modifier = Modifier.clickable { onItemChanged(index, item.copy(unit = u)) },
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = if (isSelected) AccentBlue else ProCardSurface,
-                                                border = BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
+                                    displayedUnits.forEach { u ->
+                                        val isSelected = item.unit.equals(u, ignoreCase = true)
+                                        Surface(
+                                            modifier = Modifier.combinedClickable(
+                                                onClick = { onItemChanged(index, item.copy(unit = u)) },
+                                                onLongClick = { unitToDelete = u }
+                                            ),
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isSelected) AccentBlue else ProCardSurface,
+                                            border = BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                                contentAlignment = Alignment.Center
                                             ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                                ) {
-                                                    Text(
-                                                        text = u,
-                                                        style = NotaTheme.typography.label.copy(
-                                                            fontSize = 11.5.sp,
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                                        ),
-                                                        color = if (isSelected) Color.White else TextGray
-                                                    )
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Icon(
-                                                        Icons.Default.Remove,
-                                                        contentDescription = "Hapus Satuan",
-                                                        modifier = Modifier.size(12.dp).clickable { onDeleteUnit(u) },
-                                                        tint = AccentRose
-                                                    )
-                                                }
+                                                Text(
+                                                    text = u,
+                                                    style = NotaTheme.typography.label.copy(
+                                                        fontSize = 12.sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                    ),
+                                                    color = if (isSelected) Color.White else TextGray
+                                                )
                                             }
                                         }
+                                    }
                                 }
 
                                 // Custom Unit input box if user wants to type freely
@@ -1039,7 +1105,7 @@ fun ItemsSection(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        "Subtotal: $currentQty ${item.unit.ifEmpty { "Pcs" }} × Rp ${formatNumber(currentPrice)}",
+                                        "Subtotal: ${item.quantity.ifBlank { "1" }} ${item.unit.ifEmpty { "Pcs" }} × Rp ${formatNumber(currentPrice)}",
                                         style = NotaTheme.typography.label.copy(fontSize = 11.5.sp),
                                         color = TextGray
                                     )
