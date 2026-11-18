@@ -19,6 +19,11 @@ out/
 build/
 app/build/
 .build-output/
+.build-outputs/
+
+# AI Studio internal artifacts & chat attachments
+.aistudio/
+public/assets/aistudio/
 
 # Gradle files
 .gradle/

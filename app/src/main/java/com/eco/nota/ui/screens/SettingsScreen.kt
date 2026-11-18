@@ -38,12 +38,15 @@ import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
@@ -278,9 +281,9 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     SettingsItem(
                         icon = Icons.Default.SystemUpdate,
                         title = "Pembaruan Aplikasi (GitHub)",
-                        subtitle = if (isCheckingUpdate) "Sedang memeriksa pembaruan..." else if (updateInfo?.hasUpdate == true) "Versi baru ${updateInfo?.latestVersion} tersedia! Ketuk untuk perbarui" else "Versi ${viewModel.currentAppVersion} • Ketuk untuk periksa rilis terbaru",
+                        subtitle = if (isCheckingUpdate) "Sedang memeriksa pembaruan..." else if (updateInfo?.hasUpdate == true) "Versi baru ${updateInfo?.latestVersion} tersedia! Ketuk untuk perbarui" else "Versi ${viewModel.currentAppVersion} • Otomatis cek saat app dibuka",
                         onClick = {
-                            viewModel.checkForUpdates(manual = true) { hasUpdate, msg ->
+                            viewModel.checkForUpdates(manual = true) { _, msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -302,7 +305,7 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Nota Kasir Pro Edition • Versi 1.6.3",
+                        "Nota Kasir Pro Edition • Versi ${viewModel.currentAppVersion}",
                         style = NotaTheme.typography.label.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold),
                         color = TextGray
                     )
@@ -832,7 +835,7 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
 
                         Button(
                             onClick = {
-                                viewModel.checkForUpdates(manual = true) { hasUpdate, msg ->
+                                viewModel.checkForUpdates(manual = true) { _, msg ->
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }
                             },
@@ -877,6 +880,78 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         }
 
                         HorizontalDivider(color = ProBorder)
+
+                        WhatsNewItem(
+                            icon = Icons.Default.SystemUpdate,
+                            title = "Update 100% In-App: Unduh hingga Instal (v1.6.7)",
+                            description = "Seluruh alur pembaruan kini berjalan penuh di dalam aplikasi—mulai dari cek rilis, unduh APK dengan progres real-time (aman disembunyikan), panduan izin instalasi, pemasangan 1-ketuk, hingga hapus file otomatis."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.DateRange,
+                            title = "Filter Periode Geser Maju/Mundur (v1.6.7)",
+                            description = "Filter Harian, Bulanan, dan Tahunan kini dapat digeser maju atau mundur (Hari Ini/Kemarin, Bulan Kemarin, Tahun Kemarin) lewat tombol panah maupun gestur geser."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.Payments,
+                            title = "Ikon & Filter Jenis Pembayaran (v1.6.6)",
+                            description = "Ikon kartu nota kini menampilkan metode bayar (Tunai/Cash, Transfer, QRIS, E-Wallet) beserta filter cepat jenis pembayaran di layar utama."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.PushPin,
+                            title = "Ringkasan Omzet & Filter Fixed (v1.6.6)",
+                            description = "Ringkasan Keuangan dan baris filter tetap menempel di atas (tidak ikut tergeser) saat menggulir daftar riwayat nota."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.SystemUpdate,
+                            title = "Auto-Cek Pembaruan Saat App Dibuka (v1.6.6)",
+                            description = "Pemeriksaan rilis GitHub terbaru kini berjalan otomatis & instan di latar belakang tepat saat aplikasi pertama kali dibuka."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                            title = "Omzet Murni dari Subtotal Barang (v1.6.5)",
+                            description = "Perhitungan Total Omzet Lunas & Total Tagihan pada Ringkasan Keuangan kini hanya menghitung Subtotal murni produk/barang (ongkir dan diskon tidak dimasukkan ke omzet)."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.SystemUpdate,
+                            title = "In-App Update Animasi & Instalasi Otomatis (v1.6.4)",
+                            description = "Bar animasi unduh APK real-time dengan persentase & ukuran MB, dialog konfirmasi instalasi langsung saat terunduh, serta otomatis hapus file APK setelah berhasil terpasang."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                            title = "Ringkasan Keuangan Bebas Ongkir (v1.6.4)",
+                            description = "Perhitungan Total Omzet Lunas & Total Tagihan pada Ringkasan Keuangan kini otomatis memotong biaya pengiriman (ongkir) agar omzet penjualan murni & lebih akurat."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.Edit,
+                            title = "Penataan Pilihan Satuan Barang (v1.6.4)",
+                            description = "Perbaikan letak tombol hapus pada pilihan satuan unit barang untuk mencegah tertekan secara tidak sengaja saat memilih unit transaksi."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
 
                         WhatsNewItem(
                             icon = Icons.AutoMirrored.Filled.ReceiptLong,

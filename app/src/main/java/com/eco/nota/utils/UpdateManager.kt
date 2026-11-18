@@ -1,22 +1,24 @@
 package com.eco.nota.utils
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Environment
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.BufferedInputStream
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import java.io.BufferedInputStream
 
 data class AppUpdateInfo(
     val hasUpdate: Boolean,
@@ -31,6 +33,18 @@ data class AppUpdateInfo(
     val publishedAt: String = ""
 )
 
+sealed class UpdateDownloadState {
+    data object Idle : UpdateDownloadState()
+    data class Downloading(
+        val progress: Int,
+        val downloadedBytes: Long,
+        val totalBytes: Long
+    ) : UpdateDownloadState()
+    data class Downloaded(val file: File) : UpdateDownloadState()
+    data class Installing(val file: File) : UpdateDownloadState()
+    data class Error(val message: String) : UpdateDownloadState()
+}
+
 object UpdateManager {
 
     /**
@@ -39,7 +53,6 @@ object UpdateManager {
      */
     fun isNewerVersion(latest: String, current: String): Boolean {
         try {
-            // Bersihkan prefix seperti "v", "V", "v.", "V.", atau teks lain sebelum angka pertama
             val cleanLatest = latest.trim().dropWhile { !it.isDigit() }
             val cleanCurrent = current.trim().dropWhile { !it.isDigit() }
 
@@ -56,7 +69,6 @@ object UpdateManager {
                 if (l < c) return false
             }
         } catch (e: Exception) {
-            // Jika parsing gagal, fallback string comparison sederhana
             return latest.trim() != current.trim()
         }
         return false
@@ -72,7 +84,7 @@ object UpdateManager {
         val cleanRepo = repo.trim().removePrefix("https://github.com/").removeSuffix("/")
         if (!cleanRepo.contains("/") || cleanRepo.split("/").size != 2) {
             return@withContext Result.failure(
-                IllegalArgumentException("Format repository harus 'username/nama-repo' (contoh: yourname/notakasir)")
+                IllegalArgumentException("Format repository harus 'username/nama-repo' (contoh: ekofebri01/nota)")
             )
         }
 
@@ -117,7 +129,6 @@ object UpdateManager {
             val htmlUrl = json.optString("html_url", "https://github.com/$cleanRepo/releases")
             val publishedAt = json.optString("published_at", "")
 
-            // Cari file asset APK di dalam release
             var apkDownloadUrl: String? = null
             var apkFileName: String? = null
             var apkSize = 0L
@@ -128,10 +139,22 @@ object UpdateManager {
                     val asset = assetsArray.getJSONObject(i)
                     val name = asset.optString("name", "")
                     if (name.endsWith(".apk", ignoreCase = true)) {
-                        apkDownloadUrl = asset.optString("browser_download_url", null)
+                        apkDownloadUrl = asset.optString("browser_download_url", "").takeIf { it.isNotBlank() }
                         apkFileName = name
                         apkSize = asset.optLong("size", 0L)
                         break
+                    }
+                }
+                if (apkDownloadUrl == null) {
+                    for (i in 0 until assetsArray.length()) {
+                        val asset = assetsArray.getJSONObject(i)
+                        val name = asset.optString("name", "")
+                        if (name.endsWith(".bin", ignoreCase = true)) {
+                            apkDownloadUrl = asset.optString("browser_download_url", "").takeIf { it.isNotBlank() }
+                            apkFileName = name.substringBeforeLast(".") + ".apk"
+                            apkSize = asset.optLong("size", 0L)
+                            break
+                        }
                     }
                 }
             }
@@ -160,88 +183,160 @@ object UpdateManager {
     }
 
     /**
-     * Memulai unduhan file APK menggunakan Android DownloadManager sistem.
+     * Mengunduh APK secara penuh di dalam aplikasi dengan dukungan progress real-time & pembatalan.
      */
-    fun downloadApkWithDownloadManager(
-        context: Context,
-        downloadUrl: String,
-        fileName: String
-    ): Boolean {
-        return try {
-            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            val uri = Uri.parse(downloadUrl)
-
-            val safeFileName = if (fileName.endsWith(".apk", ignoreCase = true)) fileName else "$fileName.apk"
-
-            val request = DownloadManager.Request(uri).apply {
-                setTitle("Mengunduh Pembaruan Nota Kasir Pro")
-                setDescription(safeFileName)
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, safeFileName)
-                setAllowedOverMetered(true)
-                setAllowedOverRoaming(true)
-            }
-
-            downloadManager.enqueue(request)
-            Toast.makeText(
-                context,
-                "Mengunduh $safeFileName... Cek bar notifikasi HP Anda.",
-                Toast.LENGTH_LONG
-            ).show()
-            true
-        } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                "Gagal memulai unduhan: ${e.localizedMessage}",
-                Toast.LENGTH_LONG
-            ).show()
-            false
-        }
-    }
-
     suspend fun downloadApkToInternalStorage(
         context: Context,
         downloadUrl: String,
         fileName: String,
-        onProgress: (Int) -> Unit
-    ): File? = withContext(Dispatchers.IO) {
+        expectedSize: Long = 0L,
+        onProgress: (progress: Int, downloadedBytes: Long, totalBytes: Long) -> Unit
+    ): Result<File> = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
+        val updatesDir = File(context.cacheDir, "updates").apply { if (!exists()) mkdirs() }
+        val safeFileName = if (fileName.endsWith(".apk", ignoreCase = true)) fileName else "$fileName.apk"
+        val tempFile = File(updatesDir, "$safeFileName.tmp")
+        val targetFile = File(updatesDir, safeFileName)
+
         try {
-            val safeFileName = if (fileName.endsWith(".apk", ignoreCase = true)) fileName else "$fileName.apk"
-            val file = File(context.cacheDir, safeFileName)
-            
+            cleanupOldApks(context)
+            updatesDir.mkdirs()
+
             val url = URL(downloadUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.connect()
-            
-            val fileLength = connection.contentLength
-            val input = BufferedInputStream(url.openStream())
-            val output = FileOutputStream(file)
-            
-            val data = ByteArray(1024)
-            var total: Long = 0
-            var count: Int
-            while (input.read(data).also { count = it } != -1) {
-                total += count.toLong()
-                if (fileLength > 0) {
-                    onProgress((total * 100 / fileLength).toInt())
-                }
-                output.write(data, 0, count)
+            connection = (url.openConnection() as HttpURLConnection).apply {
+                instanceFollowRedirects = true
+                setRequestProperty("User-Agent", "NotaKasirPro-Android-App")
+                connectTimeout = 15000
+                readTimeout = 30000
+                connect()
             }
-            
-            output.flush()
-            output.close()
-            input.close()
-            connection.disconnect()
-            
-            file
+
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) {
+                return@withContext Result.failure(
+                    IllegalStateException("Gagal mengunduh file (HTTP $responseCode)")
+                )
+            }
+
+            val contentLength = connection.contentLength.toLong().let {
+                if (it > 0L) it else expectedSize
+            }
+
+            BufferedInputStream(connection.inputStream).use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    val data = ByteArray(8192)
+                    var total = 0L
+                    var count: Int
+                    var lastProgress = -1
+                    var lastBytesEmit = 0L
+
+                    while (input.read(data).also { count = it } != -1) {
+                        currentCoroutineContext().ensureActive()
+                        total += count.toLong()
+                        output.write(data, 0, count)
+
+                        val progress = if (contentLength > 0L) {
+                            ((total * 100L) / contentLength).toInt().coerceIn(0, 100)
+                        } else {
+                            0
+                        }
+                        if (progress != lastProgress || (total - lastBytesEmit) >= 65536L) {
+                            lastProgress = progress
+                            lastBytesEmit = total
+                            onProgress(progress, total, contentLength)
+                        }
+                    }
+                    output.flush()
+                    onProgress(100, total, if (contentLength > 0L) contentLength else total)
+                }
+            }
+
+            if (!tempFile.exists() || tempFile.length() < 100_000L) {
+                tempFile.delete()
+                return@withContext Result.failure(
+                    IllegalStateException("File APK yang diunduh tidak valid atau korup.")
+                )
+            }
+
+            if (targetFile.exists()) targetFile.delete()
+            if (!tempFile.renameTo(targetFile)) {
+                tempFile.copyTo(targetFile, overwrite = true)
+                tempFile.delete()
+            }
+
+            Result.success(targetFile)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            tempFile.delete()
+            targetFile.delete()
+            throw e
         } catch (e: Exception) {
-            e.printStackTrace()
-            null
+            tempFile.delete()
+            Result.failure(e)
+        } finally {
+            connection?.disconnect()
         }
     }
 
-    fun installApk(context: Context, file: File) {
+    fun cleanupOldApks(context: Context) {
         try {
+            val updatesDir = File(context.cacheDir, "updates")
+            if (updatesDir.exists()) {
+                updatesDir.listFiles()?.forEach { it.delete() }
+            }
+            context.cacheDir.listFiles()?.forEach { file ->
+                if (file.isFile && (file.name.endsWith(".apk", ignoreCase = true) ||
+                        file.name.endsWith(".bin", ignoreCase = true) ||
+                        file.name.endsWith(".tmp", ignoreCase = true))
+                ) {
+                    file.delete()
+                }
+            }
+            context.getExternalFilesDir(null)?.listFiles()?.forEach { file ->
+                if (file.isFile && (file.name.endsWith(".apk", ignoreCase = true) ||
+                        file.name.endsWith(".bin", ignoreCase = true))
+                ) {
+                    file.delete()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun canInstallPackages(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.packageManager.canRequestPackageInstalls()
+        } else {
+            true
+        }
+    }
+
+    fun openInstallPermissionSettings(context: Context) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:${context.packageName}")
+                ).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(
+                context,
+                "Buka Pengaturan > Aplikasi > Nota Kasir Pro > Instal apl yang tidak dikenal",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    fun installApk(context: Context, file: File): Boolean {
+        return try {
+            if (!file.exists() || file.length() == 0L) {
+                Toast.makeText(context, "File APK tidak ditemukan. Silakan unduh ulang.", Toast.LENGTH_SHORT).show()
+                return false
+            }
             val apkUri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -253,16 +348,17 @@ object UpdateManager {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(intent)
-            
-            // Delete the file after initiating installation
-            file.deleteOnExit() 
+            // Tandai file agar otomatis dibersihkan saat aplikasi keluar / dibuka ulang setelah update
+            file.deleteOnExit()
+            true
         } catch (e: Exception) {
             Toast.makeText(context, "Gagal memulai instalasi: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            false
         }
     }
 
     /**
-     * Membuka URL di browser eksternal (bisa untuk halaman rilis atau direct download link).
+     * Membuka URL di browser eksternal (hanya fallback jika rilis GitHub tidak melampirkan APK).
      */
     fun openBrowser(context: Context, url: String) {
         try {
@@ -275,3 +371,4 @@ object UpdateManager {
         }
     }
 }
+

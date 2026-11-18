@@ -16,8 +16,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.eco.nota.utils.AppUpdateInfo
 import com.eco.nota.utils.BackupContainer
+import com.eco.nota.utils.UpdateDownloadState
 import com.eco.nota.utils.UpdateManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -155,9 +157,18 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
     private val _deletedUnits = MutableStateFlow(loadDeletedUnits())
     val deletedUnits: StateFlow<Set<String>> = _deletedUnits
 
-    val currentAppVersion: String = "1.6.3"
+    val currentAppVersion: String = try {
+        val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
+        pInfo.versionName ?: "1.6.7"
+    } catch (e: Exception) {
+        "1.6.7"
+    }
 
-    private val _githubRepo = MutableStateFlow(prefs.getString("github_repo", "ekofebri01/nota") ?: "ekofebri01/nota")
+    private val _githubRepo = MutableStateFlow(
+        prefs.getString("github_repo", "ekofebri01/nota").let {
+            if (it.isNullOrBlank()) "ekofebri01/nota" else it
+        }
+    )
     val githubRepo: StateFlow<String> = _githubRepo
 
     private val _autoCheckUpdate = MutableStateFlow(prefs.getBoolean("auto_check_update", true))
@@ -172,16 +183,25 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
     private val _updateDialogDismissed = MutableStateFlow(false)
     val updateDialogDismissed: StateFlow<Boolean> = _updateDialogDismissed
 
+    private val _updateBannerDismissed = MutableStateFlow(false)
+    val updateBannerDismissed: StateFlow<Boolean> = _updateBannerDismissed
+
+    private val _updateDownloadState = MutableStateFlow<UpdateDownloadState>(UpdateDownloadState.Idle)
+    val updateDownloadState: StateFlow<UpdateDownloadState> = _updateDownloadState
+
+    private var downloadJob: Job? = null
+
     init {
-        viewModelScope.launch {
+        UpdateManager.cleanupOldApks(application)
+        // Otomatis cek pembaruan saat app pertama kali dibuka (independen dari proses backup)
+        if (_autoCheckUpdate.value && _githubRepo.value.isNotBlank()) {
+            checkForUpdates(manual = false)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
             // Perform auto backup check/initialization if DB has items
             val existing = dao.getAllNotasDirect()
             if (existing.isNotEmpty()) {
                 performAutoBackup(showToast = false)
-            }
-            // Auto-check GitHub updates if configured and enabled
-            if (_autoCheckUpdate.value && _githubRepo.value.isNotBlank()) {
-                checkForUpdates(manual = false)
             }
         }
     }
@@ -212,23 +232,23 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkForUpdates(manual: Boolean = false, onResult: ((Boolean, String) -> Unit)? = null) {
-        val repo = _githubRepo.value.trim()
-        if (repo.isBlank()) {
-            if (manual) {
-                onResult?.invoke(false, "Silakan atur nama Repository GitHub terlebih dahulu (misal: username/repo).")
-            }
-            return
-        }
+        val repo = _githubRepo.value.trim().ifBlank { "ekofebri01/nota" }
 
         viewModelScope.launch {
             _isCheckingUpdate.value = true
-            val result = UpdateManager.checkUpdateFromGitHub(repo, currentAppVersion)
+            var result = UpdateManager.checkUpdateFromGitHub(repo, currentAppVersion)
+            // Jika gagal pada auto-check saat app baru dibuka (misal koneksi baru aktif), coba ulang 1x
+            if (result.isFailure && !manual) {
+                kotlinx.coroutines.delay(2500L)
+                result = UpdateManager.checkUpdateFromGitHub(repo, currentAppVersion)
+            }
             _isCheckingUpdate.value = false
 
             result.onSuccess { info ->
                 _updateInfo.value = info
                 if (info.hasUpdate) {
                     _updateDialogDismissed.value = false
+                    _updateBannerDismissed.value = false
                     if (manual) {
                         onResult?.invoke(true, "Versi baru tersedia: ${info.latestVersion}")
                     }
@@ -243,6 +263,82 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    fun startInAppUpdateDownload(updateInfo: AppUpdateInfo) {
+        val downloadUrl = updateInfo.apkDownloadUrl
+        if (downloadUrl.isNullOrBlank()) {
+            _updateDownloadState.value = UpdateDownloadState.Error("URL unduhan APK tidak tersedia pada rilis ini.")
+            return
+        }
+
+        downloadJob?.cancel()
+        downloadJob = viewModelScope.launch {
+            _updateDownloadState.value = UpdateDownloadState.Downloading(
+                progress = 0,
+                downloadedBytes = 0L,
+                totalBytes = updateInfo.apkSize
+            )
+            val app = getApplication<Application>()
+            val fileName = updateInfo.apkFileName ?: "NotaKasirPro-${updateInfo.latestVersion}.apk"
+            val result = UpdateManager.downloadApkToInternalStorage(
+                context = app,
+                downloadUrl = downloadUrl,
+                fileName = fileName,
+                expectedSize = updateInfo.apkSize,
+                onProgress = { progress, downloaded, total ->
+                    _updateDownloadState.value = UpdateDownloadState.Downloading(
+                        progress = progress,
+                        downloadedBytes = downloaded,
+                        totalBytes = total
+                    )
+                }
+            )
+            result.onSuccess { file ->
+                _updateDownloadState.value = UpdateDownloadState.Downloaded(file)
+            }.onFailure { error ->
+                _updateDownloadState.value = UpdateDownloadState.Error(
+                    error.localizedMessage ?: "Gagal mengunduh file pembaruan."
+                )
+            }
+        }
+    }
+
+    fun cancelInAppUpdateDownload() {
+        downloadJob?.cancel()
+        downloadJob = null
+        UpdateManager.cleanupOldApks(getApplication())
+        _updateDownloadState.value = UpdateDownloadState.Idle
+    }
+
+    fun installDownloadedApk(context: Context, file: File) {
+        if (!file.exists()) {
+            _updateDownloadState.value = UpdateDownloadState.Error("File APK tidak ditemukan. Silakan unduh ulang.")
+            return
+        }
+        val launched = UpdateManager.installApk(context, file)
+        if (launched) {
+            _updateDownloadState.value = UpdateDownloadState.Installing(file)
+        } else {
+            _updateDownloadState.value = UpdateDownloadState.Error("Gagal membuka pemasang aplikasi.")
+        }
+    }
+
+    fun dismissAndCleanupUpdate() {
+        if (_updateDownloadState.value !is UpdateDownloadState.Downloading) {
+            UpdateManager.cleanupOldApks(getApplication())
+            _updateDownloadState.value = UpdateDownloadState.Idle
+        }
+        _updateDialogDismissed.value = true
+    }
+
+    fun dismissUpdateBanner() {
+        if (_updateDownloadState.value !is UpdateDownloadState.Downloading) {
+            UpdateManager.cleanupOldApks(getApplication())
+            _updateDownloadState.value = UpdateDownloadState.Idle
+        }
+        _updateBannerDismissed.value = true
+        _updateDialogDismissed.value = true
     }
 
     fun saveNota(nota: Nota) {
@@ -450,7 +546,7 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun performAutoBackup(showToast: Boolean = false) {
+    private suspend fun performAutoBackup(showToast: Boolean = false) = withContext(Dispatchers.IO) {
         try {
             val app = getApplication<Application>()
             val allEntities = dao.getAllNotasDirect()

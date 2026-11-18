@@ -130,6 +130,11 @@ fun NotaApp(viewModel: NotaViewModel) {
         )
     }
 
+    val updateInfo by viewModel.updateInfo.collectAsState()
+    val updateDialogDismissed by viewModel.updateDialogDismissed.collectAsState()
+    val updateBannerDismissed by viewModel.updateBannerDismissed.collectAsState()
+    val updateDownloadState by viewModel.updateDownloadState.collectAsState()
+
     if (showSplash) {
         SplashScreen(onTimeout = { showSplash = false })
         return
@@ -151,11 +156,8 @@ fun NotaApp(viewModel: NotaViewModel) {
 
     if (showSettings) {
         SettingsScreen(viewModel = viewModel, onDismiss = { showSettings = false })
-        return
-    }
-
-    selectedNota?.let { selected ->
-        val currentNota = notas.find { it.id == selected.id } ?: selected
+    } else if (selectedNota != null) {
+        val currentNota = notas.find { it.id == selectedNota!!.id } ?: selectedNota!!
         DetailNotaScreen(
             nota = currentNota,
             viewModel = viewModel,
@@ -165,39 +167,41 @@ fun NotaApp(viewModel: NotaViewModel) {
                 selectedNota = null
             }
         )
-        return
+    } else {
+        Scaffold(
+            containerColor = NotaTheme.colors.backgroundMain,
+            topBar = {
+                MainAppBar(
+                    title = "Nota Kasir",
+                    onStatsClicked = { },
+                    onSettingsClicked = { showSettings = true }
+                )
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                HomeScreen(
+                    notas = notas,
+                    onNotaClick = { selectedNota = it },
+                    onCreateNotaClick = { showCreateNota = true },
+                    updateInfo = if (updateBannerDismissed) null else updateInfo,
+                    downloadState = updateDownloadState,
+                    onUpdateClick = { viewModel.showUpdateDialog() },
+                    onDismissUpdate = { viewModel.dismissUpdateBanner() }
+                )
+            }
+        }
     }
-
-    val updateInfo by viewModel.updateInfo.collectAsState()
-    val updateDialogDismissed by viewModel.updateDialogDismissed.collectAsState()
 
     if (updateInfo != null && updateInfo!!.hasUpdate && !updateDialogDismissed) {
         com.eco.nota.ui.components.UpdateAvailableDialog(
             updateInfo = updateInfo!!,
-            onDismiss = { viewModel.dismissUpdateDialog() }
+            downloadState = updateDownloadState,
+            onStartDownload = { viewModel.startInAppUpdateDownload(updateInfo!!) },
+            onCancelDownload = { viewModel.cancelInAppUpdateDownload() },
+            onInstallClick = { file -> viewModel.installDownloadedApk(context, file) },
+            onHide = { viewModel.dismissUpdateDialog() },
+            onDismissAndCleanup = { viewModel.dismissAndCleanupUpdate() }
         )
-    }
-
-    Scaffold(
-        containerColor = NotaTheme.colors.backgroundMain,
-        topBar = {
-            MainAppBar(
-                title = "Nota Kasir",
-                onStatsClicked = { },
-                onSettingsClicked = { showSettings = true }
-            )
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
-            HomeScreen(
-                notas = notas,
-                onNotaClick = { selectedNota = it },
-                onCreateNotaClick = { showCreateNota = true },
-                updateInfo = updateInfo,
-                onUpdateClick = { viewModel.showUpdateDialog() },
-                onDismissUpdate = { viewModel.dismissUpdateDialog() }
-            )
-        }
     }
 }
 
