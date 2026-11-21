@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,16 +25,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -42,6 +50,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -51,10 +60,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,6 +98,8 @@ fun HomeScreen(
     var dateOffset by remember { mutableIntStateOf(0) }
     var selectedStatusFilter by remember { mutableStateOf("Semua") }
     var selectedPaymentFilter by remember { mutableStateOf("Semua") }
+    var searchQuery by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     val targetCalendar = remember(selectedDateFilter, dateOffset) {
         java.util.Calendar.getInstance().apply {
@@ -131,7 +145,11 @@ fun HomeScreen(
         }
     }
 
-    val filteredNotas = remember(selectedDateFilter, dateOffset, selectedStatusFilter, selectedPaymentFilter, notas) {
+    val queryTokens = remember(searchQuery) {
+        searchQuery.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    }
+
+    val filteredNotas = remember(selectedDateFilter, dateOffset, selectedStatusFilter, selectedPaymentFilter, queryTokens, notas) {
         val list = notas.filter { nota ->
             val matchesStatus = when (selectedStatusFilter) {
                 "Lunas" -> nota.status.equals("Lunas", ignoreCase = true)
@@ -163,7 +181,25 @@ fun HomeScreen(
                     }
                 } catch (e: Exception) { false }
             }
-            matchesStatus && matchesPayment && matchesDate
+
+            val matchesSearch = if (queryTokens.isEmpty()) true else {
+                val itemKeywords = nota.items.joinToString(" ") { "${it.name} ${it.unit}" }
+                val searchableText = buildString {
+                    append(nota.customerName).append(' ')
+                    append(itemKeywords).append(' ')
+                    append(nota.referenceCode).append(' ')
+                    append(nota.phoneNumber).append(' ')
+                    append(nota.address).append(' ')
+                    append(nota.customerLabel).append(' ')
+                    append(nota.notes).append(' ')
+                    append(nota.date).append(' ')
+                    append(nota.paymentMethod).append(' ')
+                    append(nota.status)
+                }.lowercase()
+                queryTokens.all { token -> searchableText.contains(token) }
+            }
+
+            matchesStatus && matchesPayment && matchesDate && matchesSearch
         }
 
         list.sortedWith(
@@ -187,21 +223,22 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = ProBackground,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreateNotaClick,
                 containerColor = AccentBlue,
                 contentColor = Color.White,
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.testTag("create_nota_fab")
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Text("Buat Nota", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold))
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Text("Buat Nota", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
                 }
             }
         }
@@ -211,16 +248,15 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Fixed Top Header, Financial Summary & Filters (tetap terlihat saat daftar riwayat nota digeser)
+            // Compact Fixed Top Header, Financial Summary, Search & Filters
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(ProBackground)
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Spacer(modifier = Modifier.height(2.dp))
-                HomeHeader()
+                HomeHeader(totalNotas = notas.size)
 
                 if (updateInfo?.hasUpdate == true) {
                     com.eco.nota.ui.components.UpdateBannerCard(
@@ -231,14 +267,14 @@ fun HomeScreen(
                     )
                 }
 
-                // Financial Summary Card (Fixed)
+                // Compact Financial Summary Card (Fixed)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderGradient)
+                    border = BorderStroke(1.dp, CardBorderGradient)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -250,53 +286,52 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     "RINGKASAN KEUANGAN",
-                                    style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                                    style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp),
                                     color = TextMuted
                                 )
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(5.dp),
                                     color = AccentBlue.copy(alpha = 0.2f)
                                 ) {
                                     Text(
                                         "Subtotal Murni",
-                                        style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                                        style = NotaTheme.typography.label.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium),
                                         color = AccentBlue,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                                     )
                                 }
                             }
                             Surface(
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(6.dp),
                                 color = AccentEmerald.copy(alpha = 0.2f)
                             ) {
                                 Text(
-                                    "Aktif",
-                                    style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                                    if (queryTokens.isNotEmpty()) "Filter Cari" else "Aktif",
+                                    style = NotaTheme.typography.label.copy(fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold),
                                     color = AccentEmerald,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("Total Omzet Lunas", style = NotaTheme.typography.label, color = TextGray)
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("Total Omzet Lunas", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp), color = TextGray)
                                 Text(
                                     "Rp ${formatCurrency(totalOmzet)}",
-                                    style = NotaTheme.typography.title.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold),
+                                    style = NotaTheme.typography.title.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
                                     color = AccentEmerald
                                 )
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("Total Tagihan", style = NotaTheme.typography.label, color = TextGray)
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("Total Tagihan", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp), color = TextGray)
                                 Text(
                                     "Rp ${formatCurrency(totalPiutang)}",
-                                    style = NotaTheme.typography.title.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold),
+                                    style = NotaTheme.typography.title.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
                                     color = AccentAmber
                                 )
                             }
@@ -304,21 +339,32 @@ fun HomeScreen(
                     }
                 }
 
-                // Filter Tabs (Fixed)
+                // Compact Search Bar
+                HomeSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onClear = {
+                        searchQuery = ""
+                        focusManager.clearFocus()
+                    },
+                    onSearchAction = { focusManager.clearFocus() }
+                )
+
+                // Compact Filter Tabs (Fixed)
                 val dateFilters = listOf("All Time", "Harian", "Bulanan", "Tahunan")
                 val statusFilters = listOf("Semua", "Lunas", "Tagihan")
                 val paymentFilters = listOf("Semua", "Tunai", "Transfer", "QRIS", "E-Wallet")
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     // Date Filter
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         dateFilters.forEach { tab ->
                             val isSelected = selectedDateFilter == tab
@@ -329,7 +375,7 @@ fun HomeScreen(
                                         selectedDateFilter = tab
                                         dateOffset = 0
                                     },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = if (isSelected) AccentBlue else ProCardSurfaceLight,
                                 border = BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
                             ) {
@@ -337,10 +383,10 @@ fun HomeScreen(
                                     tab,
                                     style = NotaTheme.typography.body.copy(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 12.5.sp
+                                        fontSize = 11.5.sp
                                     ),
                                     color = if (isSelected) Color.White else TextGray,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                 )
                             }
                         }
@@ -361,38 +407,36 @@ fun HomeScreen(
                                         },
                                         onDragEnd = {
                                             if (totalDragX > 60f) {
-                                                // Geser ke kanan -> periode sebelumnya (mundur)
                                                 dateOffset -= 1
                                             } else if (totalDragX < -60f) {
-                                                // Geser ke kiri -> periode berikutnya (maju)
                                                 dateOffset += 1
                                             }
                                             totalDragX = 0f
                                         }
                                     )
                                 },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
                             color = ProCardSurface,
                             border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.45f))
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                                    .padding(horizontal = 2.dp, vertical = 1.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 IconButton(
                                     onClick = { dateOffset -= 1 },
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(34.dp)
                                         .testTag("period_prev_button")
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                                         contentDescription = "Periode Sebelumnya",
                                         tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
 
@@ -400,7 +444,7 @@ fun HomeScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable(enabled = dateOffset != 0) { dateOffset = 0 }
-                                        .padding(vertical = 4.dp),
+                                        .padding(vertical = 3.dp),
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -408,13 +452,13 @@ fun HomeScreen(
                                         imageVector = Icons.Default.DateRange,
                                         contentDescription = null,
                                         tint = AccentBlue,
-                                        modifier = Modifier.size(14.dp)
+                                        modifier = Modifier.size(13.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(5.dp))
                                     Text(
                                         text = periodLabel,
                                         style = NotaTheme.typography.body.copy(
-                                            fontSize = 12.5.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold
                                         ),
                                         color = Color.White,
@@ -422,16 +466,16 @@ fun HomeScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     if (dateOffset != 0) {
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(5.dp))
                                         Surface(
-                                            shape = RoundedCornerShape(5.dp),
+                                            shape = RoundedCornerShape(4.dp),
                                             color = AccentBlue.copy(alpha = 0.2f)
                                         ) {
                                             Text(
                                                 text = "Reset",
-                                                style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                                style = NotaTheme.typography.label.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Bold),
                                                 color = Color(0xFF93C5FD),
-                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                             )
                                         }
                                     }
@@ -440,14 +484,14 @@ fun HomeScreen(
                                 IconButton(
                                     onClick = { dateOffset += 1 },
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(34.dp)
                                         .testTag("period_next_button")
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                         contentDescription = "Periode Berikutnya",
                                         tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
@@ -459,7 +503,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         statusFilters.forEach { tab ->
                             val isSelected = selectedStatusFilter == tab
@@ -467,18 +511,18 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .testTag("filter_status_${tab.lowercase()}")
                                     .clickable { selectedStatusFilter = tab },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = if (isSelected) AccentBlue else ProCardSurfaceLight,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
+                                border = BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
                             ) {
                                 Text(
                                     tab,
                                     style = NotaTheme.typography.body.copy(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 12.5.sp
+                                        fontSize = 11.5.sp
                                     ),
                                     color = if (isSelected) Color.White else TextGray,
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
                                 )
                             }
                         }
@@ -489,7 +533,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         paymentFilters.forEach { tab ->
                             val isSelected = selectedPaymentFilter == tab
@@ -500,28 +544,28 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .testTag("filter_payment_${tab.lowercase().replace("-", "_")}")
                                     .clickable { selectedPaymentFilter = tab },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = chipColor,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
+                                border = BorderStroke(1.dp, borderColor)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     if (tab != "Semua") {
                                         Icon(
                                             imageVector = getPaymentIcon(tab),
                                             contentDescription = null,
                                             tint = contentColor,
-                                            modifier = Modifier.size(14.dp)
+                                            modifier = Modifier.size(13.dp)
                                         )
                                     }
                                     Text(
                                         text = if (tab == "Semua") "Semua Bayar" else tab,
                                         style = NotaTheme.typography.body.copy(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 12.5.sp
+                                            fontSize = 11.5.sp
                                         ),
                                         color = contentColor
                                     )
@@ -531,12 +575,29 @@ fun HomeScreen(
                     }
                 }
 
-                Text(
-                    "RIWAYAT NOTA (${filteredNotas.size})",
-                    style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-                    color = TextMuted,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 1.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "RIWAYAT NOTA (${filteredNotas.size})",
+                        style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp),
+                        color = TextMuted
+                    )
+                    if (searchQuery.isNotBlank()) {
+                        Text(
+                            text = "Pencarian: \"${searchQuery.trim()}\"",
+                            style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Medium),
+                            color = Color(0xFF93C5FD),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
                 HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
             }
 
@@ -546,51 +607,64 @@ fun HomeScreen(
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 10.dp, bottom = 88.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(top = 8.dp, bottom = 84.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (filteredNotas.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 36.dp),
+                                .padding(vertical = 32.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Box(
                                     modifier = Modifier
-                                        .size(84.dp)
+                                        .size(72.dp)
                                         .background(PrimaryGradient, CircleShape)
                                         .padding(3.dp)
                                         .background(ProBackground, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        Icons.AutoMirrored.Filled.ReceiptLong,
+                                        imageVector = if (searchQuery.isNotBlank()) Icons.Default.Search else Icons.AutoMirrored.Filled.ReceiptLong,
                                         contentDescription = null,
-                                        modifier = Modifier.size(40.dp),
+                                        modifier = Modifier.size(34.dp),
                                         tint = AccentBlue
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(14.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    "Tidak ada nota sesuai filter",
-                                    style = NotaTheme.typography.heading.copy(fontSize = 16.sp),
+                                    text = if (searchQuery.isNotBlank()) "Tidak ada nota untuk \"${searchQuery.trim()}\"" else "Tidak ada nota sesuai filter",
+                                    style = NotaTheme.typography.heading.copy(fontSize = 15.sp),
                                     color = Color.White
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Ubah filter atau ketuk Buat Nota untuk mencatat transaksi",
-                                    style = NotaTheme.typography.label,
+                                    text = if (searchQuery.isNotBlank()) "Coba kata kunci pelanggan, barang, atau hapus filter lain" else "Ubah filter atau ketuk Buat Nota untuk mencatat transaksi",
+                                    style = NotaTheme.typography.label.copy(fontSize = 11.5.sp),
                                     color = TextGray
                                 )
+                                if (searchQuery.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    TextButton(
+                                        onClick = { searchQuery = "" },
+                                        colors = ButtonDefaults.textButtonColors(contentColor = AccentBlue)
+                                    ) {
+                                        Text("Reset Pencarian", fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
                     }
                 } else {
                     items(filteredNotas, key = { it.id }) { nota ->
-                        NotaItemCard(nota = nota, onClick = { onNotaClick(nota) })
+                        NotaItemCard(
+                            nota = nota,
+                            showDetailedItems = queryTokens.isNotEmpty(),
+                            onClick = { onNotaClick(nota) }
+                        )
                     }
                 }
             }
@@ -599,24 +673,111 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeHeader() {
-    Column(modifier = Modifier.fillMaxWidth()) {
+fun HomeHeader(totalNotas: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
-            "Selamat Datang, Eko 👋",
-            style = NotaTheme.typography.title.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold),
+            "Halo, Eko 👋",
+            style = NotaTheme.typography.title.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
             color = Color.White
         )
-        Spacer(modifier = Modifier.height(1.dp))
         Text(
-            "Kelola nota & transaksi bisnis dengan mudah",
-            style = NotaTheme.typography.label.copy(fontSize = 11.5.sp),
-            color = TextGray
+            "$totalNotas Transaksi",
+            style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+            color = TextMuted
         )
     }
 }
 
 @Composable
-fun NotaItemCard(nota: Nota, onClick: () -> Unit) {
+fun HomeSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onSearchAction: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 42.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = ProCardSurface,
+        border = BorderStroke(1.dp, if (query.isNotEmpty()) AccentBlue.copy(alpha = 0.8f) else ProBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Cari nota",
+                tint = if (query.isNotEmpty()) AccentBlue else TextMuted,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 9.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = "Cari pelanggan, barang dibeli, atau no. nota...",
+                        style = NotaTheme.typography.body.copy(fontSize = 12.5.sp),
+                        color = TextMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    textStyle = NotaTheme.typography.body.copy(
+                        fontSize = 13.sp,
+                        color = Color.White
+                    ),
+                    cursorBrush = SolidColor(AccentBlue),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { onSearchAction() }),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("home_search_input")
+                )
+            }
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = onClear,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .testTag("home_search_clear_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Hapus pencarian",
+                        tint = TextGray,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NotaItemCard(
+    nota: Nota,
+    showDetailedItems: Boolean = false,
+    onClick: () -> Unit
+) {
     val isLunas = nota.status.equals("Lunas", ignoreCase = true)
     val statusColor = if (isLunas) AccentEmerald else AccentAmber
     val paymentCategory = getPaymentCategory(nota.paymentMethod)
@@ -627,29 +788,29 @@ fun NotaItemCard(nota: Nota, onClick: () -> Unit) {
             .fillMaxWidth()
             .testTag("nota_item_card_${nota.id}")
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, ProBorder)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = statusColor.copy(alpha = 0.15f),
-                modifier = Modifier.size(46.dp)
+                modifier = Modifier.size(42.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = paymentIcon,
                         contentDescription = "$paymentCategory - ${nota.status}",
                         tint = statusColor,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -657,7 +818,7 @@ fun NotaItemCard(nota: Nota, onClick: () -> Unit) {
                 ) {
                     Text(
                         nota.customerName,
-                        style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                        style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.5.sp),
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -666,24 +827,38 @@ fun NotaItemCard(nota: Nota, onClick: () -> Unit) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         nota.total,
-                        style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                        style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.5.sp),
                         color = Color.White
                     )
                 }
 
                 if (nota.items.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
+                    val itemsSummary = if (showDetailedItems) {
+                        nota.items.joinToString(", ") { item ->
+                            val qtyStr = item.quantity.trim()
+                            val unitStr = item.unit.trim()
+                            val qtyPrefix = if (qtyStr.isNotEmpty() && qtyStr != "1") {
+                                if (unitStr.isNotEmpty()) "${qtyStr} ${unitStr} " else "${qtyStr}x "
+                            } else {
+                                ""
+                            }
+                            "$qtyPrefix${item.name}"
+                        }
+                    } else {
+                        nota.items.joinToString(", ") { it.name }
+                    }
                     Text(
-                        text = nota.items.joinToString(", ") { it.name },
+                        text = itemsSummary,
                         style = NotaTheme.typography.label.copy(fontSize = 11.5.sp),
-                        color = TextGray,
-                        maxLines = 1,
+                        color = if (showDetailedItems) Color(0xFFCBD5E1) else TextGray,
+                        maxLines = if (showDetailedItems) 3 else 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(5.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -691,7 +866,7 @@ fun NotaItemCard(nota: Nota, onClick: () -> Unit) {
                 ) {
                     Text(
                         "${nota.referenceCode} • ${nota.date}",
-                        style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                        style = NotaTheme.typography.label.copy(fontSize = 10.5.sp),
                         color = TextMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -719,7 +894,7 @@ fun NotaItemCard(nota: Nota, onClick: () -> Unit) {
                         ) {
                             Text(
                                 nota.status,
-                                style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold),
+                                style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                 color = statusColor,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )

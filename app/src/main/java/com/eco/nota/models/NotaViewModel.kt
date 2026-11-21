@@ -159,9 +159,9 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentAppVersion: String = try {
         val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
-        pInfo.versionName ?: "1.6.7"
+        pInfo.versionName ?: "1.6.8"
     } catch (e: Exception) {
-        "1.6.7"
+        "1.6.8"
     }
 
     private val _githubRepo = MutableStateFlow(

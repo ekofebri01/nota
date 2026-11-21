@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -205,65 +207,70 @@ fun NotaApp(viewModel: NotaViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppBar(title: String, onStatsClicked: () -> Unit, onSettingsClicked: () -> Unit) {
-    TopAppBar(
-        title = {
+    Surface(
+        color = NotaTheme.colors.backgroundMain,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .height(48.dp)
+                .padding(start = 16.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = Color(0xFF6366F1).copy(alpha = 0.2f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.4f)),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(30.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ReceiptLong,
                             contentDescription = null,
                             tint = Color(0xFFA5B4FC),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Text(
+                    title,
+                    style = NotaTheme.typography.heading.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                    color = NotaTheme.colors.textPrimary
+                )
+                Surface(
+                    shape = RoundedCornerShape(5.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.2f)
                 ) {
                     Text(
-                        title,
-                        style = NotaTheme.typography.heading.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
-                        color = NotaTheme.colors.textPrimary
+                        "PRO",
+                        style = NotaTheme.typography.label.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                        color = Color(0xFF10B981),
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                     )
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFF10B981).copy(alpha = 0.2f)
-                    ) {
-                        Text(
-                            "PRO",
-                            style = NotaTheme.typography.label.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                            color = Color(0xFF10B981),
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                        )
-                    }
                 }
             }
-        },
-        actions = {
-            IconButton(onClick = onSettingsClicked) {
+
+            IconButton(
+                onClick = onSettingsClicked,
+                modifier = Modifier.size(48.dp)
+            ) {
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = "Pengaturan",
-                    tint = NotaTheme.colors.textPrimary
+                    tint = NotaTheme.colors.textPrimary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = NotaTheme.colors.backgroundMain
-        )
-    )
+        }
+    }
 }

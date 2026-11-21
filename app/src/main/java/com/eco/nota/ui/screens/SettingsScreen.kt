@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -880,6 +881,22 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         }
 
                         HorizontalDivider(color = ProBorder)
+
+                        WhatsNewItem(
+                            icon = Icons.Default.Search,
+                            title = "Pencarian Pelanggan, Barang & Nota (v1.6.8)",
+                            description = "Kolom pencarian cepat di layar utama untuk memfilter riwayat berdasarkan nama pelanggan, barang yang dibeli, nomor nota, nomor HP, atau catatan—lengkap dengan daftar item terbeli dan ringkasan omzet otomatis."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
+                            icon = Icons.Default.Edit,
+                            title = "Header & Ringkasan Lebih Compact (v1.6.8)",
+                            description = "Menghilangkan jarak kosong berlebih di atas layar dan merapatkan kartu Ringkasan Keuangan serta filter agar daftar Riwayat Nota tampil jauh lebih banyak dalam satu layar."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
 
                         WhatsNewItem(
                             icon = Icons.Default.SystemUpdate,
