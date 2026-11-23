@@ -24,14 +24,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.QrCode
@@ -69,10 +74,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -81,6 +88,7 @@ import coil.compose.AsyncImage
 import com.eco.nota.models.BusinessProfile
 import com.eco.nota.models.Nota
 import com.eco.nota.models.NotaViewModel
+import com.eco.nota.ui.theme.AccentAmber
 import com.eco.nota.ui.theme.AccentBlue
 import com.eco.nota.ui.theme.AccentEmerald
 import com.eco.nota.ui.theme.AccentRose
@@ -88,6 +96,7 @@ import com.eco.nota.ui.theme.NotaTheme
 import com.eco.nota.ui.theme.ProBackground
 import com.eco.nota.ui.theme.ProBorder
 import com.eco.nota.ui.theme.ProCardSurface
+import com.eco.nota.ui.theme.ProCardSurfaceLight
 import com.eco.nota.ui.theme.TextGray
 import com.eco.nota.ui.theme.TextMuted
 import com.eco.nota.utils.ImageUtils
@@ -433,6 +442,144 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                                     color = TextGray,
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
+                            }
+                        }
+                    }
+                }
+
+                // CHECKLIST PESANAN SUDAH DIBUAT
+                if (nota.items.isNotEmpty()) {
+                    var showOrderChecklist by remember { mutableStateOf(false) }
+                    val doneCount = nota.items.count { it.isDone }
+                    val totalCount = nota.items.size
+                    val allItemsDone = doneCount == totalCount
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = ProCardSurface),
+                        border = BorderStroke(
+                            1.dp,
+                            if (allItemsDone) AccentEmerald.copy(alpha = 0.5f) else ProBorder
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showOrderChecklist = !showOrderChecklist }
+                                    .testTag("detail_checklist_header"),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckBox,
+                                        contentDescription = null,
+                                        tint = if (allItemsDone) AccentEmerald else AccentBlue,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            text = "Checklist Pesanan Dibuat",
+                                            style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp),
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = if (allItemsDone) "Semua pesanan ($doneCount/$totalCount) sudah dibuat" else "$doneCount dari $totalCount pesanan selesai",
+                                            style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                                            color = if (allItemsDone) AccentEmerald else TextGray
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    imageVector = if (showOrderChecklist) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (showOrderChecklist) "Tutup checklist" else "Buka checklist",
+                                    tint = TextGray
+                                )
+                            }
+
+                            AnimatedVisibility(visible = showOrderChecklist) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    HorizontalDivider(color = ProBorder.copy(alpha = 0.6f))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Text(
+                                            text = if (allItemsDone) "Reset Belum" else "Tandai Semua Sudah Dibuat",
+                                            style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                                            color = if (allItemsDone) TextGray else AccentEmerald,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .clickable { viewModel.setAllNotaItemsDone(nota.id, !allItemsDone) }
+                                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                    nota.items.forEachIndexed { index, item ->
+                                        val qtyStr = item.quantity.trim()
+                                        val unitStr = item.unit.trim()
+                                        val qtyLabel = when {
+                                            qtyStr.isNotEmpty() && unitStr.isNotEmpty() -> "$qtyStr $unitStr"
+                                            qtyStr.isNotEmpty() -> "${qtyStr}x"
+                                            else -> ""
+                                        }
+                                        Surface(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .clickable { viewModel.toggleNotaItemDone(nota.id, index) },
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (item.isDone) AccentEmerald.copy(alpha = 0.1f) else ProCardSurfaceLight.copy(alpha = 0.6f),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (item.isDone) AccentEmerald.copy(alpha = 0.4f) else ProBorder
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (item.isDone) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                                    contentDescription = if (item.isDone) "Sudah dibuat" else "Belum dibuat",
+                                                    tint = if (item.isDone) AccentEmerald else TextGray,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                Text(
+                                                    text = if (qtyLabel.isNotEmpty()) "$qtyLabel • ${item.name}" else item.name,
+                                                    style = NotaTheme.typography.body.copy(
+                                                        fontSize = 13.sp,
+                                                        fontWeight = if (item.isDone) FontWeight.Normal else FontWeight.SemiBold,
+                                                        textDecoration = if (item.isDone) TextDecoration.LineThrough else TextDecoration.None
+                                                    ),
+                                                    color = if (item.isDone) TextGray else Color.White,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Surface(
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = if (item.isDone) AccentEmerald.copy(alpha = 0.2f) else AccentAmber.copy(alpha = 0.18f)
+                                                ) {
+                                                    Text(
+                                                        text = if (item.isDone) "Sudah Dibuat" else "Belum",
+                                                        style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                                        color = if (item.isDone) AccentEmerald else AccentAmber,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

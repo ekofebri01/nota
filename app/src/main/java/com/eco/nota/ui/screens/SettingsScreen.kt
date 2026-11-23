@@ -883,6 +883,14 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         HorizontalDivider(color = ProBorder)
 
                         WhatsNewItem(
+                            icon = Icons.Default.CheckCircle,
+                            title = "Checklist Pesanan Sudah Dibuat (v1.6.9)",
+                            description = "Di bagian Riwayat Nota dan Detail Nota, kini tersedia checklist per item pesanan untuk memilih mana pesanan yang sudah dibuat/selesai dan mana yang belum, lengkap dengan badge progres otomatis."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+
+                        WhatsNewItem(
                             icon = Icons.Default.Search,
                             title = "Pencarian Pelanggan, Barang & Nota (v1.6.8)",
                             description = "Kolom pencarian cepat di layar utama untuk memfilter riwayat berdasarkan nama pelanggan, barang yang dibeli, nomor nota, nomor HP, atau catatan—lengkap dengan daftar item terbeli dan ringkasan omzet otomatis."

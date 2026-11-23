@@ -28,7 +28,8 @@ data class NotaItemInput(
     val name: String = "",
     val quantity: String = "1",
     val unit: String = "",
-    val price: String = ""
+    val price: String = "",
+    val isDone: Boolean = false
 )
 
 data class CustomerSuggestion(

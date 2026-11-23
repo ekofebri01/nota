@@ -72,6 +72,9 @@ interface NotaDao {
     @Query("UPDATE notas SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: String, status: String)
 
+    @Query("UPDATE notas SET itemsJson = :itemsJson WHERE id = :id")
+    suspend fun updateItemsJson(id: String, itemsJson: String)
+
     @Query("DELETE FROM notas")
     suspend fun deleteAll()
 }
@@ -159,9 +162,9 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentAppVersion: String = try {
         val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
-        pInfo.versionName ?: "1.6.8"
+        pInfo.versionName ?: "1.6.9"
     } catch (e: Exception) {
-        "1.6.8"
+        "1.6.9"
     }
 
     private val _githubRepo = MutableStateFlow(
@@ -383,6 +386,38 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val normalized = normalizeNotaStatus(newStatus)
             dao.updateStatus(id, normalized)
+            performAutoBackup(showToast = false)
+        }
+    }
+
+    fun toggleNotaItemDone(notaId: String, itemIndex: Int) {
+        viewModelScope.launch {
+            val targetNota = notas.value.find { it.id == notaId } ?: return@launch
+            if (itemIndex !in targetNota.items.indices) return@launch
+            val updatedItems = targetNota.items.mapIndexed { idx, item ->
+                if (idx == itemIndex) item.copy(isDone = !item.isDone) else item
+            }
+            val itemsJson = try {
+                jsonFormat.encodeToString(updatedItems)
+            } catch (e: Exception) {
+                return@launch
+            }
+            dao.updateItemsJson(notaId, itemsJson)
+            performAutoBackup(showToast = false)
+        }
+    }
+
+    fun setAllNotaItemsDone(notaId: String, allDone: Boolean) {
+        viewModelScope.launch {
+            val targetNota = notas.value.find { it.id == notaId } ?: return@launch
+            if (targetNota.items.isEmpty()) return@launch
+            val updatedItems = targetNota.items.map { it.copy(isDone = allDone) }
+            val itemsJson = try {
+                jsonFormat.encodeToString(updatedItems)
+            } catch (e: Exception) {
+                return@launch
+            }
+            dao.updateItemsJson(notaId, itemsJson)
             performAutoBackup(showToast = false)
         }
     }

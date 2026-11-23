@@ -188,7 +188,9 @@ fun NotaApp(viewModel: NotaViewModel) {
                     updateInfo = if (updateBannerDismissed) null else updateInfo,
                     downloadState = updateDownloadState,
                     onUpdateClick = { viewModel.showUpdateDialog() },
-                    onDismissUpdate = { viewModel.dismissUpdateBanner() }
+                    onDismissUpdate = { viewModel.dismissUpdateBanner() },
+                    onToggleItemDone = { notaId, index -> viewModel.toggleNotaItemDone(notaId, index) },
+                    onSetAllItemsDone = { notaId, allDone -> viewModel.setAllNotaItemsDone(notaId, allDone) }
                 )
             }
         }
