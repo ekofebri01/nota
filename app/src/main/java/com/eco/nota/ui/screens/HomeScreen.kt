@@ -56,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -95,6 +96,7 @@ fun HomeScreen(
     notas: List<Nota>,
     onNotaClick: (Nota) -> Unit,
     onCreateNotaClick: () -> Unit,
+    defaultDateFilter: String = "All Time",
     updateInfo: com.eco.nota.utils.AppUpdateInfo? = null,
     downloadState: com.eco.nota.utils.UpdateDownloadState = com.eco.nota.utils.UpdateDownloadState.Idle,
     onUpdateClick: () -> Unit = {},
@@ -102,13 +104,18 @@ fun HomeScreen(
     onToggleItemDone: (notaId: String, itemIndex: Int) -> Unit = { _, _ -> },
     onSetAllItemsDone: (notaId: String, allDone: Boolean) -> Unit = { _, _ -> }
 ) {
-    var selectedDateFilter by remember { mutableStateOf("All Time") }
+    var selectedDateFilter by remember { mutableStateOf(defaultDateFilter) }
     var dateOffset by remember { mutableIntStateOf(0) }
     var selectedStatusFilter by remember { mutableStateOf("Semua") }
     var selectedPaymentFilter by remember { mutableStateOf("Semua") }
     var searchQuery by remember { mutableStateOf("") }
     var expandedChecklistNotaIds by remember { mutableStateOf(setOf<String>()) }
     val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(defaultDateFilter) {
+        selectedDateFilter = defaultDateFilter
+        dateOffset = 0
+    }
 
     val targetCalendar = remember(selectedDateFilter, dateOffset) {
         java.util.Calendar.getInstance().apply {

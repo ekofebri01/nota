@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +84,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -233,6 +235,103 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         subtitle = "Logo, Nama, Alamat, Kontak, Rekening Bank & QRIS",
                         onClick = { showBusinessProfile = true }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Section: Tampilan Beranda
+                val defaultDateFilter by viewModel.defaultDateFilter.collectAsState()
+                val viewOptions = listOf("Harian", "Bulanan", "Tahunan", "All Time")
+
+                Text(
+                    "TAMPILAN BERANDA",
+                    style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                    color = TextMuted,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = ProCardSurface),
+                    border = BorderStroke(1.dp, ProBorder)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = AccentBlue.copy(alpha = 0.15f),
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.DateRange,
+                                        contentDescription = null,
+                                        tint = Color(0xFFA5B4FC),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Default Tampilan Riwayat",
+                                    style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.5.sp),
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = when (defaultDateFilter) {
+                                        "Harian" -> "Saat app dibuka langsung tampilkan nota Hari Ini"
+                                        "Bulanan" -> "Saat app dibuka langsung tampilkan nota Bulan Ini"
+                                        "Tahunan" -> "Saat app dibuka langsung tampilkan nota Tahun Ini"
+                                        else -> "Saat app dibuka tampilkan Semua Riwayat (All Time)"
+                                    },
+                                    style = NotaTheme.typography.label.copy(fontSize = 11.5.sp),
+                                    color = TextGray
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            viewOptions.forEach { option ->
+                                val isSelected = defaultDateFilter == option
+                                Surface(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            viewModel.setDefaultDateFilter(option)
+                                            Toast.makeText(context, "Default tampilan diatur ke: $option", Toast.LENGTH_SHORT).show()
+                                        }
+                                        .testTag("default_view_${option.lowercase().replace(" ", "_")}"),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (isSelected) AccentBlue else ProCardSurfaceLight,
+                                    border = BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
+                                ) {
+                                    Text(
+                                        text = option,
+                                        style = NotaTheme.typography.body.copy(
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            fontSize = 12.5.sp
+                                        ),
+                                        color = if (isSelected) Color.White else TextGray,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -881,6 +980,14 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         }
 
                         HorizontalDivider(color = ProBorder)
+
+                        WhatsNewItem(
+                            icon = Icons.Default.DateRange,
+                            title = "Pengaturan Default Tampilan Awal (v1.7.0)",
+                            description = "Kini Anda dapat memilih tampilan awal beranda saat aplikasi dibuka: Harian, Bulanan, Tahunan, atau All Time langsung melalui menu Pengaturan."
+                        )
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
 
                         WhatsNewItem(
                             icon = Icons.Default.CheckCircle,

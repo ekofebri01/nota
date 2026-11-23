@@ -162,9 +162,9 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentAppVersion: String = try {
         val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
-        pInfo.versionName ?: "1.6.9"
+        pInfo.versionName ?: "1.7.0"
     } catch (e: Exception) {
-        "1.6.9"
+        "1.7.0"
     }
 
     private val _githubRepo = MutableStateFlow(
@@ -176,6 +176,13 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _autoCheckUpdate = MutableStateFlow(prefs.getBoolean("auto_check_update", true))
     val autoCheckUpdate: StateFlow<Boolean> = _autoCheckUpdate
+
+    private val _defaultDateFilter = MutableStateFlow(
+        prefs.getString("default_date_filter", "All Time").let { saved ->
+            if (saved in listOf("Harian", "Bulanan", "Tahunan", "All Time")) saved!! else "All Time"
+        }
+    )
+    val defaultDateFilter: StateFlow<String> = _defaultDateFilter
 
     private val _updateInfo = MutableStateFlow<AppUpdateInfo?>(null)
     val updateInfo: StateFlow<AppUpdateInfo?> = _updateInfo
@@ -224,6 +231,12 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
     fun setAutoCheckUpdate(enabled: Boolean) {
         _autoCheckUpdate.value = enabled
         prefs.edit().putBoolean("auto_check_update", enabled).apply()
+    }
+
+    fun setDefaultDateFilter(filter: String) {
+        val valid = if (filter in listOf("Harian", "Bulanan", "Tahunan", "All Time")) filter else "All Time"
+        _defaultDateFilter.value = valid
+        prefs.edit().putString("default_date_filter", valid).apply()
     }
 
     fun dismissUpdateDialog() {

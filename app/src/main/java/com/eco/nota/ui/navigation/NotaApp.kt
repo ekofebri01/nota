@@ -136,6 +136,7 @@ fun NotaApp(viewModel: NotaViewModel) {
     val updateDialogDismissed by viewModel.updateDialogDismissed.collectAsState()
     val updateBannerDismissed by viewModel.updateBannerDismissed.collectAsState()
     val updateDownloadState by viewModel.updateDownloadState.collectAsState()
+    val defaultDateFilter by viewModel.defaultDateFilter.collectAsState()
 
     if (showSplash) {
         SplashScreen(onTimeout = { showSplash = false })
@@ -185,6 +186,7 @@ fun NotaApp(viewModel: NotaViewModel) {
                     notas = notas,
                     onNotaClick = { selectedNota = it },
                     onCreateNotaClick = { showCreateNota = true },
+                    defaultDateFilter = defaultDateFilter,
                     updateInfo = if (updateBannerDismissed) null else updateInfo,
                     downloadState = updateDownloadState,
                     onUpdateClick = { viewModel.showUpdateDialog() },
