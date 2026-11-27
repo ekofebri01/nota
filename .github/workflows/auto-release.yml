@@ -85,15 +85,26 @@ jobs:
             fi
           fi
 
-      - name: Set up Gradle 8.7
+      - name: Set up Gradle 8.14.3
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.14.3'
 
-      - name: Restore build keystore
+      - name: Prepare build keystore
         run: |
           if [ -f debug.keystore.base64 ]; then
             base64 -d debug.keystore.base64 > debug.keystore
+          fi
+          if [ ! -s debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
           fi
 
       - name: Build Release APK
