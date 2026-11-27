@@ -4,6 +4,11 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.7.6] — Pembaruan Aplikasi (2026-11-27)
+- ci: sanitize signing credentials in auto-release
+
+---
+
 ## [v1.7.5] — Optimasi Kode & Penyempurnaan Aplikasi
 - **Pembaruan Ikon & Navigasi**: Memperbarui penggunaan ikon ke varian `Icons.AutoMirrored` dan membersihkan variabel/parameter navigasi yang tidak terpakai pada `NotaApp`, `CreateNotaScreen`, dan `UpdateDialog`.
 - **Null-Safety Generator Struk**: Menghapus assertion `!!` pada pembacaan URI gambar QRIS di `ReceiptBitmapGenerator` agar rendering struk lebih aman dan bebas warning compiler.

@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.7.6",
+    "icon": "new_releases",
+    "title": "Pembaruan Aplikasi (v1.7.6)",
+    "description": "ci: sanitize signing credentials in auto-release."
+  },
+  {
     "version": "1.7.5",
     "icon": "system_update",
     "title": "Optimasi & Penyempurnaan Aplikasi (v1.7.5)",
