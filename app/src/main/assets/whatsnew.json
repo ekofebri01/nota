@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.7.7",
+    "icon": "new_releases",
+    "title": "Pembaruan Aplikasi (v1.7.7)",
+    "description": "build(deps): update GitHub Actions to latest versions."
+  },
+  {
     "version": "1.7.6",
     "icon": "new_releases",
     "title": "Pembaruan Aplikasi (v1.7.6)",

@@ -5,7 +5,7 @@ Aplikasi kasir & manajemen nota transaksi Android berbasis **Kotlin** dan **Jetp
 ![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B%20(API%2024--34)-10B981?style=flat-square)
 ![Language](https://img.shields.io/badge/Kotlin-1.9.24-6366F1?style=flat-square)
 ![UI](https://img.shields.io/badge/UI-Jetpack%20Compose%20M3-3B82F6?style=flat-square)
-![Version](https://img.shields.io/badge/Version-v1.7.6-F59E0B?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.7.7-F59E0B?style=flat-square)
 
 ---
 
@@ -136,4 +136,4 @@ Secara default workflow memakai `debug.keystore.base64` sebagai fallback agar bu
 
 ## Catatan Pembaruan (Changelog)
 
-Lihat riwayat lengkap perubahan dari rilis awal hingga versi terbaru (**v1.7.6**) di file [`changelog.md`](./changelog.md).
+Lihat riwayat lengkap perubahan dari rilis awal hingga versi terbaru (**v1.7.7**) di file [`changelog.md`](./changelog.md).
