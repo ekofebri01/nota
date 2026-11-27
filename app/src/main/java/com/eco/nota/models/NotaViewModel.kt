@@ -14,6 +14,8 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.eco.nota.utils.AppUpdateInfo
 import com.eco.nota.utils.BackupContainer
 import com.eco.nota.utils.UpdateDownloadState
@@ -52,7 +54,8 @@ data class NotaEntity(
     val deposit: Long,
     val paymentMethod: String,
     val notes: String,
-    val itemsJson: String
+    val itemsJson: String,
+    val isPickedUp: Boolean = false
 )
 
 @Dao
@@ -75,11 +78,14 @@ interface NotaDao {
     @Query("UPDATE notas SET itemsJson = :itemsJson WHERE id = :id")
     suspend fun updateItemsJson(id: String, itemsJson: String)
 
+    @Query("UPDATE notas SET isPickedUp = :isPickedUp WHERE id = :id")
+    suspend fun updatePickedUp(id: String, isPickedUp: Boolean)
+
     @Query("DELETE FROM notas")
     suspend fun deleteAll()
 }
 
-@Database(entities = [NotaEntity::class], version = 1, exportSchema = false)
+@Database(entities = [NotaEntity::class], version = 2, exportSchema = false)
 abstract class NotaDatabase : RoomDatabase() {
     abstract fun notaDao(): NotaDao
 
@@ -87,13 +93,19 @@ abstract class NotaDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: NotaDatabase? = null
 
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notas ADD COLUMN isPickedUp INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): NotaDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     NotaDatabase::class.java,
                     "nota_database"
-                ).build()
+                ).addMigrations(MIGRATION_1_2).build()
                 INSTANCE = instance
                 instance
             }
@@ -131,7 +143,8 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     deposit = entity.deposit,
                     paymentMethod = normalizePaymentMethod(entity.paymentMethod),
                     notes = entity.notes,
-                    items = items
+                    items = items,
+                    isPickedUp = entity.isPickedUp
                 )
             }.sortedWith(
                 compareByDescending<Nota> { nota ->
@@ -162,9 +175,9 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentAppVersion: String = try {
         val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
-        pInfo.versionName ?: "1.7.0"
+        pInfo.versionName ?: "1.7.5"
     } catch (e: Exception) {
-        "1.7.0"
+        "1.7.5"
     }
 
     private val _githubRepo = MutableStateFlow(
@@ -381,7 +394,8 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 deposit = nota.deposit,
                 paymentMethod = normalizePaymentMethod(nota.paymentMethod),
                 notes = nota.notes,
-                itemsJson = itemsJson
+                itemsJson = itemsJson,
+                isPickedUp = nota.isPickedUp
             )
             dao.insertNota(entity)
             performAutoBackup(showToast = true)
@@ -431,6 +445,13 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
             dao.updateItemsJson(notaId, itemsJson)
+            performAutoBackup(showToast = false)
+        }
+    }
+
+    fun updateNotaPickedUp(notaId: String, isPickedUp: Boolean) {
+        viewModelScope.launch {
+            dao.updatePickedUp(notaId, isPickedUp)
             performAutoBackup(showToast = false)
         }
     }
@@ -582,7 +603,8 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                         deposit = nota.deposit,
                         paymentMethod = normalizePaymentMethod(nota.paymentMethod),
                         notes = nota.notes,
-                        itemsJson = itemsJson
+                        itemsJson = itemsJson,
+                        isPickedUp = nota.isPickedUp
                     )
                     dao.insertNota(entity)
                 }
@@ -621,7 +643,8 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     deposit = entity.deposit,
                     paymentMethod = normalizePaymentMethod(entity.paymentMethod),
                     notes = entity.notes,
-                    items = items
+                    items = items,
+                    isPickedUp = entity.isPickedUp
                 )
             }
 

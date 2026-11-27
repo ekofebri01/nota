@@ -1,0 +1,158 @@
+[
+  {
+    "version": "1.7.5",
+    "icon": "system_update",
+    "title": "Optimasi & Penyempurnaan Aplikasi (v1.7.5)",
+    "description": "Pembersihan ikon Material terbaru (AutoMirrored), peningkatan keamanan null-safety pada pembuat struk QRIS, serta optimalisasi performa navigasi dan rilis aplikasi."
+  },
+  {
+    "version": "1.7.4",
+    "icon": "star",
+    "title": "Pengaturan Floating Window dengan Animasi (v1.7.4)",
+    "description": "Tampilan menu Pengaturan kini hadir sebagai jendela melayang (floating window) elegan di atas layar utama dengan animasi halus saat dibuka dan ditutup."
+  },
+  {
+    "version": "1.7.3",
+    "icon": "payments",
+    "title": "Toggle Lunas / Belum Lunas di Menu Riwayat Nota (v1.7.3)",
+    "description": "Pada tombol Menu (⋮) di setiap kartu Riwayat Nota kini tersedia opsi cepat Tandai Sudah Lunas / Tandai Belum Lunas agar status pembayaran dan Ringkasan Omzet langsung terupdate tanpa perlu membuka detail nota."
+  },
+  {
+    "version": "1.7.2",
+    "icon": "system_update",
+    "title": "Auto Build Release APK & Auto Changelog (v1.7.2)",
+    "description": "Menambahkan workflow GitHub Actions untuk build APK release otomatis saat push ke GitHub, sekaligus otomatis memperbarui daftar What's New di dalam aplikasi dan catatan changelog.md dari riwayat commit."
+  },
+  {
+    "version": "1.7.1",
+    "icon": "checkbox",
+    "title": "Menu & Checklist Pesanan Diambil (v1.7.1)",
+    "description": "Di bagian Riwayat Nota dan Detail Nota kini tersedia menu serta toggle checklist untuk menandai apakah pesanan Sudah Diambil atau Belum Diambil oleh pelanggan, lengkap dengan filter status pengambilan."
+  },
+  {
+    "version": "1.7.0",
+    "icon": "date_range",
+    "title": "Pengaturan Default Tampilan Awal (v1.7.0)",
+    "description": "Kini Anda dapat memilih tampilan awal beranda saat aplikasi dibuka: Harian, Bulanan, Tahunan, atau All Time langsung melalui menu Pengaturan."
+  },
+  {
+    "version": "1.6.9",
+    "icon": "check_circle",
+    "title": "Checklist Pesanan Sudah Dibuat (v1.6.9)",
+    "description": "Di bagian Riwayat Nota dan Detail Nota, kini tersedia checklist per item pesanan untuk memilih mana pesanan yang sudah dibuat/selesai dan mana yang belum, lengkap dengan badge progres otomatis."
+  },
+  {
+    "version": "1.6.8",
+    "icon": "search",
+    "title": "Pencarian Pelanggan, Barang & Nota (v1.6.8)",
+    "description": "Kolom pencarian cepat di layar utama untuk memfilter riwayat berdasarkan nama pelanggan, barang yang dibeli, nomor nota, nomor HP, atau catatan—lengkap dengan daftar item terbeli dan ringkasan omzet otomatis."
+  },
+  {
+    "version": "1.6.8",
+    "icon": "edit",
+    "title": "Header & Ringkasan Lebih Compact (v1.6.8)",
+    "description": "Menghilangkan jarak kosong berlebih di atas layar dan merapatkan kartu Ringkasan Keuangan serta filter agar daftar Riwayat Nota tampil jauh lebih banyak dalam satu layar."
+  },
+  {
+    "version": "1.6.7",
+    "icon": "system_update",
+    "title": "Update 100% In-App: Unduh hingga Instal (v1.6.7)",
+    "description": "Seluruh alur pembaruan kini berjalan penuh di dalam aplikasi—mulai dari cek rilis, unduh APK dengan progres real-time (aman disembunyikan), panduan izin instalasi, pemasangan 1-ketuk, hingga hapus file otomatis."
+  },
+  {
+    "version": "1.6.7",
+    "icon": "date_range",
+    "title": "Filter Periode Geser Maju/Mundur (v1.6.7)",
+    "description": "Filter Harian, Bulanan, dan Tahunan kini dapat digeser maju atau mundur (Hari Ini/Kemarin, Bulan Kemarin, Tahun Kemarin) lewat tombol panah maupun gestur geser."
+  },
+  {
+    "version": "1.6.6",
+    "icon": "payments",
+    "title": "Ikon & Filter Jenis Pembayaran (v1.6.6)",
+    "description": "Ikon kartu nota kini menampilkan metode bayar (Tunai/Cash, Transfer, QRIS, E-Wallet) beserta filter cepat jenis pembayaran di layar utama."
+  },
+  {
+    "version": "1.6.6",
+    "icon": "push_pin",
+    "title": "Ringkasan Omzet & Filter Fixed (v1.6.6)",
+    "description": "Ringkasan Keuangan dan baris filter tetap menempel di atas (tidak ikut tergeser) saat menggulir daftar riwayat nota."
+  },
+  {
+    "version": "1.6.6",
+    "icon": "system_update",
+    "title": "Auto-Cek Pembaruan Saat App Dibuka (v1.6.6)",
+    "description": "Pemeriksaan rilis GitHub terbaru kini berjalan otomatis & instan di latar belakang tepat saat aplikasi pertama kali dibuka."
+  },
+  {
+    "version": "1.6.5",
+    "icon": "receipt",
+    "title": "Omzet Murni dari Subtotal Barang (v1.6.5)",
+    "description": "Perhitungan Total Omzet Lunas & Total Tagihan pada Ringkasan Keuangan kini hanya menghitung Subtotal murni produk/barang (ongkir dan diskon tidak dimasukkan ke omzet)."
+  },
+  {
+    "version": "1.6.4",
+    "icon": "system_update",
+    "title": "In-App Update Animasi & Instalasi Otomatis (v1.6.4)",
+    "description": "Bar animasi unduh APK real-time dengan persentase & ukuran MB, dialog konfirmasi instalasi langsung saat terunduh, serta otomatis hapus file APK setelah berhasil terpasang."
+  },
+  {
+    "version": "1.6.4",
+    "icon": "receipt",
+    "title": "Ringkasan Keuangan Bebas Ongkir (v1.6.4)",
+    "description": "Perhitungan Total Omzet Lunas & Total Tagihan pada Ringkasan Keuangan kini otomatis memotong biaya pengiriman (ongkir) agar omzet penjualan murni & lebih akurat."
+  },
+  {
+    "version": "1.6.4",
+    "icon": "edit",
+    "title": "Penataan Pilihan Satuan Barang (v1.6.4)",
+    "description": "Perbaikan letak tombol hapus pada pilihan satuan unit barang untuk mencegah tertekan secara tidak sengaja saat memilih unit transaksi."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "receipt",
+    "title": "Preview Produk Anti-Ketutup Keyboard & Live Struk",
+    "description": "Rekomendasi barang otomatis bergeser di atas keyboard, list produk kini bisa di-scroll bebas, serta tombol Preview Struk Real-Time."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "system_update",
+    "title": "Pembaruan Otomatis & In-App Update dari GitHub",
+    "description": "Notifikasi cerdas dan dialog unduh APK versi terbaru secara instan langsung dari rilis publik GitHub repository Anda."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "qr_code",
+    "title": "QRIS Pembayaran di Atas Struk",
+    "description": "Gambar QRIS otomatis tampil di bagian atas (bawah nama toko) beresolusi HD agar langsung mudah discan pelanggan via BCA, GoPay, Dana, dll."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "phone",
+    "title": "Ambil Nama & Nomor dari Kontak",
+    "description": "Fitur 'Ambil Kontak' pada formulir buat nota untuk memilih pelanggan langsung dari kontak telepon HP Anda secara otomatis."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "cloud_upload",
+    "title": "Auto-Backup Real-Time & 1-Klik Pulihkan",
+    "description": "Semua transaksi otomatis tersimpan ke folder penyimpanan HP setiap kali dibuat. Tersedia tombol 1-klik untuk memulihkan seluruh data transaksi."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "star",
+    "title": "Generator Struk HD Tanpa Gagal",
+    "description": "Simpan ke Galeri Foto dan Kirim ke WhatsApp bekerja 100% instan dengan hasil gambar yang tajam dan presisi."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "check_circle",
+    "title": "Urutan Transaksi Terbaru di Atas",
+    "description": "Daftar nota transaksi otomatis diurutkan kronologis mundur (terbaru ke terlama) di layar utama."
+  },
+  {
+    "version": "1.6.3",
+    "icon": "edit",
+    "title": "Menu Pengaturan Lebih Bersih & Ringkas",
+    "description": "Menu yang tidak terpakai telah dibersihkan dan bagian backup & ekspor digabung menjadi satu agar lebih praktis digunakan."
+  }
+]

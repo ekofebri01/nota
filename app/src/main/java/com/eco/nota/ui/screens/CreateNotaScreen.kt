@@ -31,11 +31,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -281,7 +281,8 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 shippingCost = shipVal,
                 paymentMethod = paymentMethod,
                 notes = notes,
-                items = items
+                items = items,
+                isPickedUp = notaToEdit?.isPickedUp ?: false
             )
             viewModel.saveNota(newNota)
             Toast.makeText(context, if (notaToEdit != null) "Nota berhasil diperbarui!" else "Nota berhasil dibuat & disimpan!", Toast.LENGTH_SHORT).show()
@@ -313,7 +314,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(Icons.Default.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
                             Text("Preview Struk", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp), color = Color(0xFFA5B4FC))
                         }
                     }
@@ -341,7 +342,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
                             Text(
                                 "TOTAL BAYAR (${items.size} Item)",
                                 style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),

@@ -20,12 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.InstallMobile
-import androidx.compose.material.icons.filled.Launch
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
@@ -643,7 +643,7 @@ fun UpdateAvailableDialog(
                                     .fillMaxWidth()
                                     .height(48.dp)
                             ) {
-                                Icon(Icons.Default.Launch, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Icon(Icons.AutoMirrored.Filled.Launch, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("Buka Halaman Rilis", style = NotaTheme.typography.body.copy(fontSize = 13.5.sp), color = Color.White)
                             }

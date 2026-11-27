@@ -7,25 +7,41 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,8 +52,10 @@ import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
@@ -51,6 +69,7 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
@@ -71,6 +90,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,57 +115,189 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.eco.nota.models.BusinessProfile
 import com.eco.nota.models.NotaViewModel
+import com.eco.nota.models.WhatsNewEntry
 import com.eco.nota.ui.components.NotaTextField
 import com.eco.nota.ui.components.SettingsItem
 import com.eco.nota.ui.components.TextButton
 import com.eco.nota.ui.theme.*
 import com.eco.nota.utils.BackupUtils
+import kotlinx.serialization.json.Json
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
+fun SettingsScreen(
+    visible: Boolean = true,
+    viewModel: NotaViewModel,
+    onDismiss: () -> Unit
+) {
     val context = LocalContext.current
     val businessProfile by viewModel.businessProfile.collectAsState()
     var showBusinessProfile by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showBackupScreen by remember { mutableStateOf(false) }
 
+    LaunchedEffect(visible) {
+        if (!visible) {
+            showBusinessProfile = false
+            showAboutDialog = false
+            showBackupScreen = false
+        }
+    }
+
+    BackHandler(enabled = visible && !showBusinessProfile && !showAboutDialog && !showBackupScreen) {
+        onDismiss()
+    }
+
     if (showBusinessProfile) {
         BusinessProfileScreen(viewModel = viewModel, onDismiss = { showBusinessProfile = false })
     }
-    
+
     if (showAboutDialog) {
         AboutDialog(viewModel = viewModel, onDismiss = { showAboutDialog = false })
     }
-    
+
     if (showBackupScreen) {
         BackupRestoreScreen(viewModel = viewModel, onDismiss = { showBackupScreen = false })
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Scaffold(
-            containerColor = ProBackground,
-            topBar = {
-                TopAppBar(
-                    title = { Text("Pengaturan", style = NotaTheme.typography.heading, color = Color.White) },
-                    navigationIcon = {
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
-                )
-            }
-        ) { innerPadding ->
-            Column(
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Backdrop scrim fade
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(durationMillis = 220)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 180))
+        ) {
+            Box(
                 modifier = Modifier
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.65f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismiss
+                    )
+            )
+        }
+
+        // Animated floating window container
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(durationMillis = 210)) +
+                scaleIn(
+                    initialScale = 0.91f,
+                    animationSpec = spring(
+                        dampingRatio = 0.74f,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) +
+                slideInVertically(
+                    initialOffsetY = { it / 14 },
+                    animationSpec = tween(durationMillis = 230)
+                ),
+            exit = fadeOut(animationSpec = tween(durationMillis = 160)) +
+                scaleOut(
+                    targetScale = 0.94f,
+                    animationSpec = tween(durationMillis = 160)
+                ) +
+                slideOutVertically(
+                    targetOffsetY = { it / 18 },
+                    animationSpec = tween(durationMillis = 160)
+                ),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 22.dp),
+                contentAlignment = Alignment.Center
             ) {
+                val maxWindowHeight = maxHeight * 0.88f
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp)
+                        .heightIn(max = maxWindowHeight)
+                        .testTag("settings_floating_window")
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { }
+                        ),
+                    shape = RoundedCornerShape(24.dp),
+                    color = ProBackground,
+                    border = BorderStroke(1.dp, CardBorderGradient),
+                    shadowElevation = 24.dp,
+                    tonalElevation = 8.dp
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Floating Window Top Header
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(ProCardSurface.copy(alpha = 0.72f))
+                                .padding(start = 16.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = AccentBlue.copy(alpha = 0.18f),
+                                    border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.35f)),
+                                    modifier = Modifier.size(34.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Settings,
+                                            contentDescription = null,
+                                            tint = Color(0xFFA5B4FC),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        text = "Pengaturan",
+                                        style = NotaTheme.typography.heading.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Nota Kasir Pro v${viewModel.currentAppVersion}",
+                                        style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                                        color = TextMuted
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag("settings_close_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Tutup Pengaturan",
+                                    tint = TextGray,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = ProBorder.copy(alpha = 0.7f))
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                                .padding(top = 10.dp)
+                        ) {
                 // Store Profile Hero Card
                 Card(
                     modifier = Modifier
@@ -416,7 +568,10 @@ fun SettingsScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                }
             }
         }
     }
@@ -981,171 +1136,19 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
 
                         HorizontalDivider(color = ProBorder)
 
-                        WhatsNewItem(
-                            icon = Icons.Default.DateRange,
-                            title = "Pengaturan Default Tampilan Awal (v1.7.0)",
-                            description = "Kini Anda dapat memilih tampilan awal beranda saat aplikasi dibuka: Harian, Bulanan, Tahunan, atau All Time langsung melalui menu Pengaturan."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.CheckCircle,
-                            title = "Checklist Pesanan Sudah Dibuat (v1.6.9)",
-                            description = "Di bagian Riwayat Nota dan Detail Nota, kini tersedia checklist per item pesanan untuk memilih mana pesanan yang sudah dibuat/selesai dan mana yang belum, lengkap dengan badge progres otomatis."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Search,
-                            title = "Pencarian Pelanggan, Barang & Nota (v1.6.8)",
-                            description = "Kolom pencarian cepat di layar utama untuk memfilter riwayat berdasarkan nama pelanggan, barang yang dibeli, nomor nota, nomor HP, atau catatan—lengkap dengan daftar item terbeli dan ringkasan omzet otomatis."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Edit,
-                            title = "Header & Ringkasan Lebih Compact (v1.6.8)",
-                            description = "Menghilangkan jarak kosong berlebih di atas layar dan merapatkan kartu Ringkasan Keuangan serta filter agar daftar Riwayat Nota tampil jauh lebih banyak dalam satu layar."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.SystemUpdate,
-                            title = "Update 100% In-App: Unduh hingga Instal (v1.6.7)",
-                            description = "Seluruh alur pembaruan kini berjalan penuh di dalam aplikasi—mulai dari cek rilis, unduh APK dengan progres real-time (aman disembunyikan), panduan izin instalasi, pemasangan 1-ketuk, hingga hapus file otomatis."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.DateRange,
-                            title = "Filter Periode Geser Maju/Mundur (v1.6.7)",
-                            description = "Filter Harian, Bulanan, dan Tahunan kini dapat digeser maju atau mundur (Hari Ini/Kemarin, Bulan Kemarin, Tahun Kemarin) lewat tombol panah maupun gestur geser."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Payments,
-                            title = "Ikon & Filter Jenis Pembayaran (v1.6.6)",
-                            description = "Ikon kartu nota kini menampilkan metode bayar (Tunai/Cash, Transfer, QRIS, E-Wallet) beserta filter cepat jenis pembayaran di layar utama."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.PushPin,
-                            title = "Ringkasan Omzet & Filter Fixed (v1.6.6)",
-                            description = "Ringkasan Keuangan dan baris filter tetap menempel di atas (tidak ikut tergeser) saat menggulir daftar riwayat nota."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.SystemUpdate,
-                            title = "Auto-Cek Pembaruan Saat App Dibuka (v1.6.6)",
-                            description = "Pemeriksaan rilis GitHub terbaru kini berjalan otomatis & instan di latar belakang tepat saat aplikasi pertama kali dibuka."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                            title = "Omzet Murni dari Subtotal Barang (v1.6.5)",
-                            description = "Perhitungan Total Omzet Lunas & Total Tagihan pada Ringkasan Keuangan kini hanya menghitung Subtotal murni produk/barang (ongkir dan diskon tidak dimasukkan ke omzet)."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.SystemUpdate,
-                            title = "In-App Update Animasi & Instalasi Otomatis (v1.6.4)",
-                            description = "Bar animasi unduh APK real-time dengan persentase & ukuran MB, dialog konfirmasi instalasi langsung saat terunduh, serta otomatis hapus file APK setelah berhasil terpasang."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                            title = "Ringkasan Keuangan Bebas Ongkir (v1.6.4)",
-                            description = "Perhitungan Total Omzet Lunas & Total Tagihan pada Ringkasan Keuangan kini otomatis memotong biaya pengiriman (ongkir) agar omzet penjualan murni & lebih akurat."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Edit,
-                            title = "Penataan Pilihan Satuan Barang (v1.6.4)",
-                            description = "Perbaikan letak tombol hapus pada pilihan satuan unit barang untuk mencegah tertekan secara tidak sengaja saat memilih unit transaksi."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                            title = "Preview Produk Anti-Ketutup Keyboard & Live Struk",
-                            description = "Rekomendasi barang otomatis bergeser di atas keyboard, list produk kini bisa di-scroll bebas, serta tombol Preview Struk Real-Time."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.SystemUpdate,
-                            title = "Pembaruan Otomatis & In-App Update dari GitHub",
-                            description = "Notifikasi cerdas dan dialog unduh APK versi terbaru secara instan langsung dari rilis publik GitHub repository Anda."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.QrCode,
-                            title = "QRIS Pembayaran di Atas Struk",
-                            description = "Gambar QRIS otomatis tampil di bagian atas (bawah nama toko) beresolusi HD agar langsung mudah discan pelanggan via BCA, GoPay, Dana, dll."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Phone,
-                            title = "Ambil Nama & Nomor dari Kontak",
-                            description = "Fitur 'Ambil Kontak' pada formulir buat nota untuk memilih pelanggan langsung dari kontak telepon HP Anda secara otomatis."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.CloudUpload,
-                            title = "Auto-Backup Real-Time & 1-Klik Pulihkan",
-                            description = "Semua transaksi otomatis tersimpan ke folder penyimpanan HP setiap kali dibuat. Tersedia tombol 1-klik untuk memulihkan seluruh data transaksi."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Star,
-                            title = "Generator Struk HD Tanpa Gagal",
-                            description = "Simpan ke Galeri Foto dan Kirim ke WhatsApp bekerja 100% instan dengan hasil gambar yang tajam dan presisi."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.CheckCircle,
-                            title = "Urutan Transaksi Terbaru di Atas",
-                            description = "Daftar nota transaksi otomatis diurutkan kronologis mundur (terbaru ke terlama) di layar utama."
-                        )
-
-                        HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
-
-                        WhatsNewItem(
-                            icon = Icons.Default.Edit,
-                            title = "Menu Pengaturan Lebih Bersih & Ringkas",
-                            description = "Menu yang tidak terpakai telah dibersihkan dan bagian backup & ekspor digabung menjadi satu agar lebih praktis digunakan."
-                        )
+                        val whatsNewEntries = remember(context) {
+                            loadWhatsNewEntries(context)
+                        }
+                        whatsNewEntries.forEachIndexed { index, entry ->
+                            WhatsNewItem(
+                                icon = resolveWhatsNewIcon(entry.icon),
+                                title = entry.title,
+                                description = entry.description
+                            )
+                            if (index < whatsNewEntries.lastIndex) {
+                                HorizontalDivider(color = ProBorder.copy(alpha = 0.5f))
+                            }
+                        }
                     }
                 }
 
@@ -1163,5 +1166,42 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+}
+
+private val whatsNewJsonParser = Json { ignoreUnknownKeys = true }
+
+private fun loadWhatsNewEntries(context: Context): List<WhatsNewEntry> {
+    return try {
+        val raw = context.assets.open("whatsnew.json").bufferedReader().use { it.readText() }
+        whatsNewJsonParser.decodeFromString<List<WhatsNewEntry>>(raw)
+    } catch (e: Exception) {
+        listOf(
+            WhatsNewEntry(
+                version = "1.7.2",
+                icon = "new_releases",
+                title = "Nota Kasir Pro Edition",
+                description = "Lihat catatan rilis terbaru melalui changelog.md atau GitHub Releases."
+            )
+        )
+    }
+}
+
+private fun resolveWhatsNewIcon(iconKey: String): ImageVector {
+    return when (iconKey.trim().lowercase()) {
+        "checkbox" -> Icons.Default.CheckBox
+        "date_range" -> Icons.Default.DateRange
+        "check_circle" -> Icons.Default.CheckCircle
+        "search" -> Icons.Default.Search
+        "edit" -> Icons.Default.Edit
+        "system_update" -> Icons.Default.SystemUpdate
+        "payments" -> Icons.Default.Payments
+        "push_pin" -> Icons.Default.PushPin
+        "receipt", "receipt_long" -> Icons.AutoMirrored.Filled.ReceiptLong
+        "qr_code" -> Icons.Default.QrCode
+        "phone" -> Icons.Default.Phone
+        "cloud_upload" -> Icons.Default.CloudUpload
+        "star" -> Icons.Default.Star
+        else -> Icons.Default.NewReleases
     }
 }

@@ -20,7 +20,8 @@ data class Nota(
     val deposit: Long = 0L,
     val paymentMethod: String = "Tunai",
     val notes: String = "",
-    val items: List<NotaItemInput> = emptyList()
+    val items: List<NotaItemInput> = emptyList(),
+    val isPickedUp: Boolean = false
 )
 
 @Serializable
@@ -59,6 +60,14 @@ data class InvoiceConfig(
     val showLogo: Boolean = true,
     val showFooter: Boolean = true,
     val showSignature: Boolean = false
+)
+
+@Serializable
+data class WhatsNewEntry(
+    val version: String = "",
+    val icon: String = "new_releases",
+    val title: String,
+    val description: String
 )
 
 fun normalizePaymentMethod(method: String?): String {

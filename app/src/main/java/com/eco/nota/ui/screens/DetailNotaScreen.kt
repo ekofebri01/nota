@@ -447,6 +447,83 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                     }
                 }
 
+                // STATUS PENGAMBILAN PESANAN (SUDAH DIAMBIL / BELUM DIAMBIL)
+                val isPickedUp = nota.isPickedUp
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("detail_pickup_card"),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isPickedUp) Color(0xFF064E3B).copy(alpha = 0.28f) else ProCardSurface
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isPickedUp) AccentEmerald.copy(alpha = 0.4f) else ProBorder
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val nextState = !isPickedUp
+                                viewModel.updateNotaPickedUp(nota.id, nextState)
+                                Toast.makeText(
+                                    context,
+                                    if (nextState) "✅ Pesanan #${nota.referenceCode} ditandai Sudah Diambil" else "Pesanan #${nota.referenceCode} ditandai Belum Diambil",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            .padding(horizontal = 14.dp, vertical = 11.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isPickedUp) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                contentDescription = if (isPickedUp) "Sudah diambil" else "Belum diambil",
+                                tint = if (isPickedUp) AccentEmerald else AccentAmber,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = if (isPickedUp) "PENGAMBILAN: SUDAH DIAMBIL" else "PENGAMBILAN: BELUM DIAMBIL",
+                                    style = NotaTheme.typography.label.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        letterSpacing = 0.4.sp
+                                    ),
+                                    color = if (isPickedUp) AccentEmerald else AccentAmber
+                                )
+                                Text(
+                                    text = if (isPickedUp) "Pesanan sudah diterima pelanggan" else "Ketuk untuk menandai sudah diambil",
+                                    style = NotaTheme.typography.body.copy(fontSize = 12.5.sp),
+                                    color = if (isPickedUp) Color(0xFFA7F3D0) else TextGray
+                                )
+                            }
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isPickedUp) Color.White.copy(alpha = 0.08f) else AccentEmerald.copy(alpha = 0.18f),
+                            border = BorderStroke(
+                                1.dp,
+                                if (isPickedUp) Color.White.copy(alpha = 0.18f) else AccentEmerald.copy(alpha = 0.45f)
+                            )
+                        ) {
+                            Text(
+                                text = if (isPickedUp) "Batal" else "Sudah Diambil",
+                                style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                color = if (isPickedUp) TextGray else AccentEmerald,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+
                 // CHECKLIST PESANAN SUDAH DIBUAT
                 if (nota.items.isNotEmpty()) {
                     var showOrderChecklist by remember { mutableStateOf(false) }

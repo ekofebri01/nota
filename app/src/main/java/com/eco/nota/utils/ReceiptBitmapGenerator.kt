@@ -31,11 +31,12 @@ object ReceiptBitmapGenerator {
         
         // Decode QRIS Bitmap if needed for unpaid/TAGIHAN status
         var originalQris: Bitmap? = null
-        if (nota.paymentMethod.equals("QRIS", ignoreCase = true) && !businessProfile.qrisUri.isNullOrEmpty() && !isLunas) {
+        val qrisPath = businessProfile.qrisUri
+        if (nota.paymentMethod.equals("QRIS", ignoreCase = true) && !qrisPath.isNullOrEmpty() && !isLunas) {
             try {
-                val uri = Uri.parse(businessProfile.qrisUri)
-                val stream: InputStream? = if (businessProfile.qrisUri!!.startsWith("/")) {
-                    java.io.File(businessProfile.qrisUri!!).inputStream()
+                val uri = Uri.parse(qrisPath)
+                val stream: InputStream? = if (qrisPath.startsWith("/")) {
+                    java.io.File(qrisPath).inputStream()
                 } else {
                     context.contentResolver.openInputStream(uri)
                 }

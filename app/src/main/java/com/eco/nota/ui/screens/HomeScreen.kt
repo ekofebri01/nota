@@ -35,22 +35,29 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -102,7 +109,9 @@ fun HomeScreen(
     onUpdateClick: () -> Unit = {},
     onDismissUpdate: () -> Unit = {},
     onToggleItemDone: (notaId: String, itemIndex: Int) -> Unit = { _, _ -> },
-    onSetAllItemsDone: (notaId: String, allDone: Boolean) -> Unit = { _, _ -> }
+    onSetAllItemsDone: (notaId: String, allDone: Boolean) -> Unit = { _, _ -> },
+    onTogglePickedUp: (notaId: String, isPickedUp: Boolean) -> Unit = { _, _ -> },
+    onTogglePaymentStatus: (notaId: String, newStatus: String) -> Unit = { _, _ -> }
 ) {
     var selectedDateFilter by remember { mutableStateOf(defaultDateFilter) }
     var dateOffset by remember { mutableIntStateOf(0) }
@@ -170,6 +179,8 @@ fun HomeScreen(
             val matchesStatus = when (selectedStatusFilter) {
                 "Lunas" -> nota.status.equals("Lunas", ignoreCase = true)
                 "Tagihan" -> nota.status.equals("Tagihan", ignoreCase = true) || nota.status.equals("Piutang", ignoreCase = true)
+                "Belum Diambil" -> !nota.isPickedUp
+                "Sudah Diambil" -> nota.isPickedUp
                 else -> true
             }
 
@@ -210,7 +221,8 @@ fun HomeScreen(
                     append(nota.notes).append(' ')
                     append(nota.date).append(' ')
                     append(nota.paymentMethod).append(' ')
-                    append(nota.status)
+                    append(nota.status).append(' ')
+                    append(if (nota.isPickedUp) "sudah diambil" else "belum diambil")
                 }.lowercase()
                 queryTokens.all { token -> searchableText.contains(token) }
             }
@@ -368,7 +380,7 @@ fun HomeScreen(
 
                 // Compact Filter Tabs (Fixed)
                 val dateFilters = listOf("All Time", "Harian", "Bulanan", "Tahunan")
-                val statusFilters = listOf("Semua", "Lunas", "Tagihan")
+                val statusFilters = listOf("Semua", "Lunas", "Tagihan", "Belum Diambil", "Sudah Diambil")
                 val paymentFilters = listOf("Semua", "Tunai", "Transfer", "QRIS", "E-Wallet")
 
                 Column(
@@ -525,7 +537,7 @@ fun HomeScreen(
                             val isSelected = selectedStatusFilter == tab
                             Surface(
                                 modifier = Modifier
-                                    .testTag("filter_status_${tab.lowercase()}")
+                                    .testTag("filter_status_${tab.lowercase().replace(" ", "_")}")
                                     .clickable { selectedStatusFilter = tab },
                                 shape = RoundedCornerShape(8.dp),
                                 color = if (isSelected) AccentBlue else ProCardSurfaceLight,
@@ -690,6 +702,11 @@ fun HomeScreen(
                             },
                             onToggleItemDone = { itemIndex -> onToggleItemDone(nota.id, itemIndex) },
                             onSetAllItemsDone = { allDone -> onSetAllItemsDone(nota.id, allDone) },
+                            onTogglePickedUp = { onTogglePickedUp(nota.id, !nota.isPickedUp) },
+                            onTogglePaymentStatus = {
+                                val nextStatus = if (nota.status.equals("Lunas", ignoreCase = true)) "Tagihan" else "Lunas"
+                                onTogglePaymentStatus(nota.id, nextStatus)
+                            },
                             onClick = { onNotaClick(nota) }
                         )
                     }
@@ -807,8 +824,11 @@ fun NotaItemCard(
     onToggleChecklistExpand: () -> Unit = {},
     onToggleItemDone: (Int) -> Unit = {},
     onSetAllItemsDone: (Boolean) -> Unit = {},
+    onTogglePickedUp: () -> Unit = {},
+    onTogglePaymentStatus: () -> Unit = {},
     onClick: () -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
     val isLunas = nota.status.equals("Lunas", ignoreCase = true)
     val statusColor = if (isLunas) AccentEmerald else AccentAmber
     val paymentCategory = getPaymentCategory(nota.paymentMethod)
@@ -986,6 +1006,171 @@ fun NotaItemCard(
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            // Compact Footer Strip: Checklist Pengambilan + Menu Aksi Kartu
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 13.dp, end = 10.dp, bottom = 9.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val pickupBg = if (nota.isPickedUp) AccentEmerald.copy(alpha = 0.16f) else ProCardSurfaceLight
+                val pickupTint = if (nota.isPickedUp) AccentEmerald else Color(0xFFFBBF24)
+                val pickupBorder = if (nota.isPickedUp) AccentEmerald.copy(alpha = 0.45f) else ProBorder
+                Surface(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onTogglePickedUp() }
+                        .testTag("nota_pickup_toggle_${nota.id}"),
+                    shape = RoundedCornerShape(8.dp),
+                    color = pickupBg,
+                    border = BorderStroke(1.dp, pickupBorder)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (nota.isPickedUp) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                            contentDescription = if (nota.isPickedUp) "Pesanan sudah diambil" else "Pesanan belum diambil",
+                            tint = pickupTint,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = if (nota.isPickedUp) "Sudah Diambil" else "Belum Diambil",
+                            style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold),
+                            color = pickupTint
+                        )
+                    }
+                }
+
+                Box {
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { menuExpanded = true }
+                            .testTag("nota_card_menu_button_${nota.id}"),
+                        shape = RoundedCornerShape(8.dp),
+                        color = ProCardSurfaceLight.copy(alpha = 0.85f),
+                        border = BorderStroke(1.dp, ProBorder)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Menu aksi nota",
+                                tint = TextGray,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Menu",
+                                style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold),
+                                color = TextGray
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        modifier = Modifier.background(ProCardSurface)
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (isLunas) "Tandai Belum Lunas" else "Tandai Sudah Lunas",
+                                    style = NotaTheme.typography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                                    color = Color.White
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (isLunas) Icons.Default.PendingActions else Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = if (isLunas) AccentAmber else AccentEmerald
+                                )
+                            },
+                            colors = MenuDefaults.itemColors(textColor = Color.White),
+                            onClick = {
+                                menuExpanded = false
+                                onTogglePaymentStatus()
+                            },
+                            modifier = Modifier.testTag("nota_menu_payment_status_${nota.id}")
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (nota.isPickedUp) "Tandai Belum Diambil" else "Tandai Sudah Diambil",
+                                    style = NotaTheme.typography.body.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                                    color = Color.White
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (nota.isPickedUp) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                    contentDescription = null,
+                                    tint = if (nota.isPickedUp) AccentEmerald else AccentAmber
+                                )
+                            },
+                            colors = MenuDefaults.itemColors(textColor = Color.White),
+                            onClick = {
+                                menuExpanded = false
+                                onTogglePickedUp()
+                            },
+                            modifier = Modifier.testTag("nota_menu_pickup_${nota.id}")
+                        )
+                        if (nota.items.isNotEmpty()) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Pesanan Dibuat ($doneCount/$totalCount)",
+                                        style = NotaTheme.typography.body.copy(fontSize = 13.sp),
+                                        color = Color.White
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Inventory2,
+                                        contentDescription = null,
+                                        tint = AccentBlue
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(textColor = Color.White),
+                                onClick = {
+                                    menuExpanded = false
+                                    onToggleChecklistExpand()
+                                }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Lihat Detail & Struk",
+                                    style = NotaTheme.typography.body.copy(fontSize = 13.sp),
+                                    color = Color.White
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                                    contentDescription = null,
+                                    tint = TextGray
+                                )
+                            },
+                            colors = MenuDefaults.itemColors(textColor = Color.White),
+                            onClick = {
+                                menuExpanded = false
+                                onClick()
+                            }
+                        )
                     }
                 }
             }

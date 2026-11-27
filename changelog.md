@@ -4,6 +4,39 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.7.5] — Optimasi Kode & Penyempurnaan Aplikasi
+- **Pembaruan Ikon & Navigasi**: Memperbarui penggunaan ikon ke varian `Icons.AutoMirrored` dan membersihkan variabel/parameter navigasi yang tidak terpakai pada `NotaApp`, `CreateNotaScreen`, dan `UpdateDialog`.
+- **Null-Safety Generator Struk**: Menghapus assertion `!!` pada pembacaan URI gambar QRIS di `ReceiptBitmapGenerator` agar rendering struk lebih aman dan bebas warning compiler.
+
+---
+
+## [v1.7.4] — Pengaturan Floating Window & Animasi
+- **Tampilan Floating Window Pengaturan**: Halaman **Pengaturan** kini tampil sebagai jendela melayang (*floating window*) modern dengan sudut membulat, efek bayangan, dan latar beranda yang diredupkan secara elegan.
+- **Animasi Halus Buka & Tutup**: Menambahkan animasi spring pop-in halus (*scale + slide + fade scrim*) saat jendela Pengaturan muncul maupun ditutup, mendukung ketuk luar jendela dan tombol kembali sistem.
+
+---
+
+## [v1.7.3] — Toggle Lunas / Belum Lunas di Menu Riwayat Nota
+- **Toggle Status Pembayaran di Menu Kartu**: Menambahkan menu cepat **Tandai Sudah Lunas / Tandai Belum Lunas** langsung pada tombol **Menu (⋮)** di setiap kartu **Riwayat Nota**, sehingga status transaksi dan **Ringkasan Keuangan** langsung terupdate instan tanpa harus membuka halaman Detail Nota.
+
+---
+
+## [v1.7.2] — Auto Build Release APK & Auto Changelog / What's New
+- **GitHub Actions Auto-Release APK**: Menambahkan workflow `.github/workflows/auto-release.yml` untuk otomatis membuild APK release (`Nota-Kasir-Pro-vX.Y.Z.apk`) dan menerbitkannya ke **GitHub Releases** setiap kali ada push ke branch `main`/`master` atau dijalankan manual lewat `workflow_dispatch`.
+- **Auto-Changelog & Auto-What's New**: Menambahkan skrip `scripts/auto_release_notes.py` untuk otomatis menaikkan versi (jika tag versi sudah ada), mencatat poin perubahan dari git commit ke **`changelog.md`**, serta menyuntikkan pembaruan ke **`app/src/main/assets/whatsnew.json`**.
+- **In-App What's New Dinamis**: Halaman **Catatan Pembaruan (What's New)** di Pengaturan kini membaca langsung dari `assets/whatsnew.json`, sehingga setiap rilis otomatis dari GitHub langsung memuat riwayat pembaruan terbaru di dalam aplikasi.
+- **Dukungan Signing Upload Key Opsional via GitHub Secrets**: Workflow otomatis menggunakan fallback `debug.keystore` atau memakai upload key (`my-upload-key.jks`) bila secrets `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, dan `SIGNING_KEY_PASSWORD` diisi di GitHub.
+
+---
+
+## [v1.7.1] — Menu & Checklist Pesanan Sudah Diambil
+- **Menu & Toggle Pengambilan di Riwayat Nota**: Setiap kartu pada **Riwayat Nota** kini memiliki toggle checklist cepat (**Sudah Diambil / Belum Diambil**) serta tombol **Menu (⋮)** untuk mengubah status pengambilan, membuka checklist item pesanan, atau membuka detail struk.
+- **Status Pengambilan di Detail Nota**: Menambahkan kontrol status pengambilan pesanan di halaman **Detail Nota** yang tersinkron langsung dengan Riwayat Nota.
+- **Filter & Pencarian Status Pengambilan**: Menambahkan filter **Belum Diambil** dan **Sudah Diambil** di baris filter status beranda serta dukungan kata kunci pencarian `sudah diambil` / `belum diambil`.
+- **Migrasi Database Aman (Room v2) & Auto-Backup**: Penambahan kolom `isPickedUp` dilengkapi migrasi database otomatis tanpa menghapus data transaksi lama, dan tersimpan penuh di backup ZIP/JSON.
+
+---
+
 ## [v1.7.0] — Default Tampilan Awal Beranda
 - **Pengaturan Default Tampilan Riwayat**: Menambahkan menu **Tampilan Beranda** di halaman **Pengaturan** untuk memilih tampilan awal otomatis saat aplikasi dibuka (`Harian`, `Bulanan`, `Tahunan`, atau `All Time`).
 - **Sinkronisasi Otomatis**: Pilihan tersimpan permanen di preferensi perangkat (`SharedPreferences`) dan langsung diterapkan ke filter beranda serta Ringkasan Keuangan.

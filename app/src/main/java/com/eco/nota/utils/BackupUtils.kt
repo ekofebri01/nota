@@ -326,6 +326,7 @@ object BackupUtils {
             .replace("\"show_logo\"", "\"showLogo\"")
             .replace("\"show_footer\"", "\"showFooter\"")
             .replace("\"show_signature\"", "\"showSignature\"")
+            .replace("\"is_picked_up\"", "\"isPickedUp\"")
 
         val trimmed = processed.trim()
         return try {

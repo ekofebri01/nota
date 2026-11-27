@@ -74,7 +74,6 @@ import com.eco.nota.ui.theme.TextGray
 fun NotaApp(viewModel: NotaViewModel) {
     val context = LocalContext.current
     var showSplash by remember { mutableStateOf(true) }
-    var currentScreen by remember { mutableStateOf("home") }
     var selectedNota by remember { mutableStateOf<Nota?>(null) }
     var showCreateNota by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -84,7 +83,7 @@ fun NotaApp(viewModel: NotaViewModel) {
     val notas by viewModel.notas.collectAsState()
 
     // Back handler for confirmation before exiting app on home screen
-    BackHandler {
+    BackHandler(enabled = !showSettings && selectedNota == null && !showCreateNota && notaToEdit == null) {
         showExitDialog = true
     }
 
@@ -157,45 +156,52 @@ fun NotaApp(viewModel: NotaViewModel) {
         return
     }
 
-    if (showSettings) {
-        SettingsScreen(viewModel = viewModel, onDismiss = { showSettings = false })
-    } else if (selectedNota != null) {
-        val currentNota = notas.find { it.id == selectedNota!!.id } ?: selectedNota!!
-        DetailNotaScreen(
-            nota = currentNota,
-            viewModel = viewModel,
-            onDismiss = { selectedNota = null },
-            onEditClick = {
-                notaToEdit = currentNota
-                selectedNota = null
-            }
-        )
-    } else {
-        Scaffold(
-            containerColor = NotaTheme.colors.backgroundMain,
-            topBar = {
-                MainAppBar(
-                    title = "Nota Kasir",
-                    onStatsClicked = { },
-                    onSettingsClicked = { showSettings = true }
-                )
-            }
-        ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                HomeScreen(
-                    notas = notas,
-                    onNotaClick = { selectedNota = it },
-                    onCreateNotaClick = { showCreateNota = true },
-                    defaultDateFilter = defaultDateFilter,
-                    updateInfo = if (updateBannerDismissed) null else updateInfo,
-                    downloadState = updateDownloadState,
-                    onUpdateClick = { viewModel.showUpdateDialog() },
-                    onDismissUpdate = { viewModel.dismissUpdateBanner() },
-                    onToggleItemDone = { notaId, index -> viewModel.toggleNotaItemDone(notaId, index) },
-                    onSetAllItemsDone = { notaId, allDone -> viewModel.setAllNotaItemsDone(notaId, allDone) }
-                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (selectedNota != null) {
+            val currentNota = notas.find { it.id == selectedNota!!.id } ?: selectedNota!!
+            DetailNotaScreen(
+                nota = currentNota,
+                viewModel = viewModel,
+                onDismiss = { selectedNota = null },
+                onEditClick = {
+                    notaToEdit = currentNota
+                    selectedNota = null
+                }
+            )
+        } else {
+            Scaffold(
+                containerColor = NotaTheme.colors.backgroundMain,
+                topBar = {
+                    MainAppBar(
+                        title = "Nota Kasir",
+                        onSettingsClicked = { showSettings = true }
+                    )
+                }
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    HomeScreen(
+                        notas = notas,
+                        onNotaClick = { selectedNota = it },
+                        onCreateNotaClick = { showCreateNota = true },
+                        defaultDateFilter = defaultDateFilter,
+                        updateInfo = if (updateBannerDismissed) null else updateInfo,
+                        downloadState = updateDownloadState,
+                        onUpdateClick = { viewModel.showUpdateDialog() },
+                        onDismissUpdate = { viewModel.dismissUpdateBanner() },
+                        onToggleItemDone = { notaId, index -> viewModel.toggleNotaItemDone(notaId, index) },
+                        onSetAllItemsDone = { notaId, allDone -> viewModel.setAllNotaItemsDone(notaId, allDone) },
+                        onTogglePickedUp = { notaId, isPickedUp -> viewModel.updateNotaPickedUp(notaId, isPickedUp) },
+                        onTogglePaymentStatus = { notaId, newStatus -> viewModel.updateNotaStatus(notaId, newStatus) }
+                    )
+                }
             }
         }
+
+        SettingsScreen(
+            visible = showSettings,
+            viewModel = viewModel,
+            onDismiss = { showSettings = false }
+        )
     }
 
     if (updateInfo != null && updateInfo!!.hasUpdate && !updateDialogDismissed) {
@@ -212,7 +218,7 @@ fun NotaApp(viewModel: NotaViewModel) {
 }
 
 @Composable
-fun MainAppBar(title: String, onStatsClicked: () -> Unit, onSettingsClicked: () -> Unit) {
+fun MainAppBar(title: String, onSettingsClicked: () -> Unit) {
     Surface(
         color = NotaTheme.colors.backgroundMain,
         modifier = Modifier.fillMaxWidth()
