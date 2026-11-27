@@ -42,7 +42,7 @@ jobs:
   build-and-release:
     name: Build APK, Update Changelog & Publish Release
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && github.actor != 'github-actions[bot]' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip ci]') && github.actor != 'github-actions[bot]') }}
 
     steps:
       - name: Checkout repository
@@ -54,9 +54,10 @@ jobs:
 
       - name: Prepare version, changelog.md & whatsnew.json
         id: release_prep
+        env:
+          BUMP_MODE: ${{ github.event.inputs.bump_type || 'auto' }}
+          CUSTOM_NOTES: ${{ github.event.inputs.release_notes || '' }}
         run: |
-          BUMP_MODE="${{ github.event.inputs.bump_type || 'auto' }}"
-          CUSTOM_NOTES="${{ github.event.inputs.release_notes || '' }}"
           python3 scripts/auto_release_notes.py \
             --bump "$BUMP_MODE" \
             --notes "$CUSTOM_NOTES" \
@@ -68,8 +69,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Verify Android SDK & accept licenses
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          if [ -z "$SDK_ROOT" ] && [ -d "/usr/local/lib/android/sdk" ]; then
+            SDK_ROOT="/usr/local/lib/android/sdk"
+          fi
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -name sdkmanager -type f 2>/dev/null | head -n 1)"
+          if [ -n "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+            "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          fi
 
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
