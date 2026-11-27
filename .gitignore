@@ -3,6 +3,7 @@
 *.aar
 *.aab
 *.ap_
+*.bin
 Nota-Kasir-Pro-release.apk
 app-debug.apk
 
