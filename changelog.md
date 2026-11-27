@@ -4,6 +4,11 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.7.8] — Pembaruan Aplikasi (2026-11-27)
+- build: downgrade Gradle to 8.11.1
+
+---
+
 ## [v1.7.7] — Pembaruan Aplikasi (2026-11-27)
 - build(deps): update GitHub Actions to latest versions
 

@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.7.8",
+    "icon": "new_releases",
+    "title": "Pembaruan Aplikasi (v1.7.8)",
+    "description": "build: downgrade Gradle to 8.11.1."
+  },
+  {
     "version": "1.7.7",
     "icon": "new_releases",
     "title": "Pembaruan Aplikasi (v1.7.7)",
