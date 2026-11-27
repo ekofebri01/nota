@@ -125,12 +125,18 @@ jobs:
 
           APKSIGNER="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name apksigner | sort -V | tail -n 1)"
           if [ -n "$SIGNING_KEYSTORE_BASE64" ] && [ -n "$APKSIGNER" ]; then
-            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
+            CLEAN_STORE_PASS="$(printf '%s' "$SIGNING_STORE_PASSWORD" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            CLEAN_KEY_PASS="$(printf '%s' "$SIGNING_KEY_PASSWORD" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            if [ -z "$CLEAN_KEY_PASS" ]; then
+              CLEAN_KEY_PASS="$CLEAN_STORE_PASS"
+            fi
+            CLEAN_KEY_ALIAS="$(printf '%s' "$SIGNING_KEY_ALIAS" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            printf '%s' "$SIGNING_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > my-upload-key.jks
             "$APKSIGNER" sign \
               --ks my-upload-key.jks \
-              --ks-pass "pass:${SIGNING_STORE_PASSWORD}" \
-              --ks-key-alias "${SIGNING_KEY_ALIAS}" \
-              --key-pass "pass:${SIGNING_KEY_PASSWORD}" \
+              --ks-pass "pass:${CLEAN_STORE_PASS}" \
+              --ks-key-alias "${CLEAN_KEY_ALIAS}" \
+              --key-pass "pass:${CLEAN_KEY_PASS}" \
               --out "$OUT_APK" \
               "$OUT_APK"
             rm -f my-upload-key.jks
