@@ -1,5 +1,6 @@
 package com.eco.nota.ui.screens
 
+import com.eco.nota.ui.theme.ambientGlow
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -264,7 +265,7 @@ fun SettingsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Settings,
                                             contentDescription = null,
-                                            tint = Color(0xFFA5B4FC),
+                                            tint = Color(0xFF7DE3FF),
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -314,7 +315,7 @@ fun SettingsScreen(
                         .clickable { showBusinessProfile = true },
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = BorderStroke(1.dp, ProBorder)
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -344,7 +345,7 @@ fun SettingsScreen(
                                     Icon(
                                         Icons.Default.Storefront,
                                         contentDescription = null,
-                                        tint = Color(0xFFA5B4FC),
+                                        tint = Color(0xFF7DE3FF),
                                         modifier = Modifier.size(26.dp)
                                     )
                                 }
@@ -423,7 +424,7 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp),
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = BorderStroke(1.dp, ProBorder)
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -442,7 +443,7 @@ fun SettingsScreen(
                                     Icon(
                                         Icons.Default.DateRange,
                                         contentDescription = null,
-                                        tint = Color(0xFFA5B4FC),
+                                        tint = Color(0xFF7DE3FF),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -670,6 +671,7 @@ fun BusinessProfileScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Scaffold(
+            modifier = Modifier.ambientGlow(),
             containerColor = ProBackground,
             topBar = {
                 TopAppBar(
@@ -766,7 +768,7 @@ fun BusinessProfileScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                                 modifier = Modifier.size(160.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color.White,
-                                border = BorderStroke(1.dp, ProBorder)
+                                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                             ) {
                                 AsyncImage(
                                     model = qrisUri,
@@ -806,6 +808,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
+            modifier = Modifier.ambientGlow(),
             containerColor = ProBackground,
             topBar = {
                 TopAppBar(
@@ -831,7 +834,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, Color(0xFF10C48C).copy(alpha = 0.5f))
                 ) {
                     Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(
@@ -842,12 +845,12 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                             Text("Lokasi Folder Backup", style = NotaTheme.typography.heading.copy(fontSize = 15.sp), color = Color.White)
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFF10B981).copy(alpha = 0.2f)
+                                color = Color(0xFF10C48C).copy(alpha = 0.2f)
                             ) {
                                 Text(
                                     "AUTO OVERWRITE",
                                     style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                    color = Color(0xFF10B981),
+                                    color = Color(0xFF10C48C),
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
@@ -856,7 +859,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = Color(0xFFE2E8F0), // Lighter background for better contrast
-                            border = BorderStroke(1.dp, ProBorder),
+                            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -891,7 +894,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (backupFolderLabel == null) Color(0xFFF59E0B) else ProBorder
+                                containerColor = if (backupFolderLabel == null) Color(0xFFFFB020) else ProBorder
                             ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -937,7 +940,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                                         }
                                     )
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10C48C)),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -951,7 +954,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                             onClick = {
                                 BackupUtils.shareBackupZip(context)
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4C6FFF)),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -967,7 +970,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = BorderStroke(1.dp, ProBorder)
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                 ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Pulihkan Data dari Berkas (.ZIP / .JSON)", style = NotaTheme.typography.heading.copy(fontSize = 16.sp), color = Color.White)
@@ -1032,7 +1035,7 @@ fun WhatsNewItem(icon: ImageVector, title: String, description: String) {
             modifier = Modifier.size(36.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(20.dp))
             }
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1053,6 +1056,7 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Scaffold(
+            modifier = Modifier.ambientGlow(),
             containerColor = ProBackground,
             topBar = {
                 TopAppBar(
@@ -1079,7 +1083,7 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = BorderStroke(1.dp, ProBorder)
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
@@ -1093,7 +1097,7 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                             border = BorderStroke(1.5.dp, AccentBlue)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Storefront, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(32.dp))
+                                Icon(Icons.Default.Storefront, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(32.dp))
                             }
                         }
 
@@ -1107,7 +1111,7 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                             Text(
                                 "Versi ${viewModel.currentAppVersion} (Pro Edition)",
                                 style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
-                                color = Color(0xFFA5B4FC),
+                                color = Color(0xFF7DE3FF),
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
@@ -1153,7 +1157,7 @@ fun AboutDialog(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                    border = BorderStroke(1.dp, ProBorder)
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),

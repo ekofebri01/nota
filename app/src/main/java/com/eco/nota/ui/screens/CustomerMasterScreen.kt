@@ -1,5 +1,6 @@
 package com.eco.nota.ui.screens
 
+import com.eco.nota.ui.theme.ambientGlow
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -112,6 +113,7 @@ fun CustomerMasterScreen(
     }
 
     Scaffold(
+        modifier = Modifier.ambientGlow(),
         containerColor = ProBackground,
         topBar = {
             TopAppBar(
@@ -219,7 +221,7 @@ fun CustomerMasterScreen(
                         modifier = Modifier.fillMaxWidth(0.92f),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                        border = BorderStroke(1.dp, ProBorder)
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
@@ -235,7 +237,7 @@ fun CustomerMasterScreen(
                                     Icon(
                                         Icons.Default.Person,
                                         contentDescription = null,
-                                        tint = Color(0xFFA5B4FC),
+                                        tint = Color(0xFF7DE3FF),
                                         modifier = Modifier.size(32.dp)
                                     )
                                 }
@@ -347,7 +349,7 @@ fun CustomerMasterScreen(
             },
             dismissButton = {
                 TextButton(onClick = { customerToDelete = null }) {
-                    Text("Batal", color = Color(0xFFA5B4FC), fontWeight = FontWeight.Bold)
+                    Text("Batal", color = Color(0xFF7DE3FF), fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = ProCardSurface,
@@ -370,7 +372,7 @@ private fun CustomerItemCard(
             .clickable(onClick = onCardClick),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Row(
             modifier = Modifier
@@ -394,7 +396,7 @@ private fun CustomerItemCard(
                         Icon(
                             Icons.Default.Person,
                             contentDescription = null,
-                            tint = Color(0xFFA5B4FC),
+                            tint = Color(0xFF7DE3FF),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -443,7 +445,7 @@ private fun CustomerItemCard(
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "Edit",
-                        tint = Color(0xFFA5B4FC),
+                        tint = Color(0xFF7DE3FF),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -517,7 +519,7 @@ fun CustomerFormDialog(
                 .padding(vertical = 20.dp),
             shape = RoundedCornerShape(20.dp),
             color = ProCardSurface,
-            border = BorderStroke(1.dp, ProBorder),
+            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
             shadowElevation = 16.dp
         ) {
             Column(
@@ -569,9 +571,9 @@ fun CustomerFormDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Ambil dari Kontak Telepon", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp), color = Color(0xFFA5B4FC))
+                        Text("Ambil dari Kontak Telepon", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp), color = Color(0xFF7DE3FF))
                     }
                 }
 
@@ -651,7 +653,7 @@ fun CustomerFormDialog(
                     OutlinedButton(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, ProBorder),
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                         modifier = Modifier.weight(1f).height(44.dp)
                     ) {
                         Text("Batal", color = TextGray, style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold))
