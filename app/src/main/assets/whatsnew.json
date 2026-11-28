@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.3",
+    "icon": "new_releases",
+    "title": "Pembaruan Aplikasi (v1.8.3)",
+    "description": "feat: saran kategori tersimpan saat mengetik di form produk."
+  },
+  {
     "version": "1.8.2",
     "icon": "new_releases",
     "title": "Pembaruan Aplikasi (v1.8.2)",
