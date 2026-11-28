@@ -1,11 +1,11 @@
 package com.eco.nota.ui.screens
 
-import com.eco.nota.ui.theme.ambientGlow
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -31,9 +31,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
@@ -59,6 +59,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,13 +68,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.eco.nota.models.Customer
 import com.eco.nota.models.Nota
 import com.eco.nota.models.NotaItemInput
 import com.eco.nota.models.NotaViewModel
+import com.eco.nota.models.Product
+import com.eco.nota.ui.components.FloatingWindowOverlay
 import com.eco.nota.ui.components.NotaTextField
 import com.eco.nota.ui.theme.AccentBlue
 import com.eco.nota.ui.theme.AccentEmerald
@@ -91,24 +96,236 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val savedNotas by viewModel.notas.collectAsState()
-    val masterProducts by viewModel.products.collectAsState()
+fun CreateNotaScreen(
+    visible: Boolean = true,
+    viewModel: NotaViewModel,
+    notaToEdit: Nota? = null,
+    onDismiss: () -> Unit
+) {
     val businessProfile by viewModel.businessProfile.collectAsState()
     var showLiveReceiptPreview by remember { mutableStateOf(false) }
     var showProductPicker by remember { mutableStateOf(false) }
+    var showCustomerPicker by remember { mutableStateOf(false) }
+    var liveNotaForPreview by remember { mutableStateOf<Nota?>(null) }
+    var onSaveFromPreview by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var onProductPicked by remember { mutableStateOf<((Product) -> Unit)?>(null) }
+    var onCustomerPicked by remember { mutableStateOf<((Customer) -> Unit)?>(null) }
+
+    val sessionState = remember {
+        object {
+            var count = 0
+            var wasVisible = false
+        }
+    }
+    if (visible && !sessionState.wasVisible) {
+        sessionState.count++
+    }
+    sessionState.wasVisible = visible
+
+    LaunchedEffect(visible) {
+        if (!visible) {
+            showLiveReceiptPreview = false
+            showProductPicker = false
+            showCustomerPicker = false
+        }
+    }
+
+    BackHandler(enabled = visible && !showLiveReceiptPreview && !showProductPicker && !showCustomerPicker) {
+        onDismiss()
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        FloatingWindowOverlay(
+            visible = visible,
+            onDismiss = onDismiss,
+            maxWidth = 580.dp,
+            heightFraction = 0.92f,
+            fillMaxHeight = true,
+            dismissOnClickOutside = false,
+            windowTestTag = "create_nota_floating_window"
+        ) {
+            key(sessionState.count, notaToEdit?.id) {
+                CreateNotaFloatingBody(
+                    viewModel = viewModel,
+                    notaToEdit = notaToEdit,
+                    onDismiss = onDismiss,
+                    onOpenPreview = { notaPreview, saveAction ->
+                        liveNotaForPreview = notaPreview
+                        onSaveFromPreview = saveAction
+                        showLiveReceiptPreview = true
+                    },
+                    onOpenProductPicker = { callback ->
+                        onProductPicked = callback
+                        showProductPicker = true
+                    },
+                    onOpenCustomerPicker = { callback ->
+                        onCustomerPicked = callback
+                        showCustomerPicker = true
+                    }
+                )
+            }
+        }
+
+        // Live Receipt Preview Floating Window
+        BackHandler(enabled = showLiveReceiptPreview) {
+            showLiveReceiptPreview = false
+        }
+        FloatingWindowOverlay(
+            visible = showLiveReceiptPreview && liveNotaForPreview != null,
+            onDismiss = { showLiveReceiptPreview = false },
+            maxWidth = 540.dp,
+            heightFraction = 0.90f,
+            fillMaxHeight = true,
+            windowTestTag = "live_receipt_floating_window"
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ProCardSurface.copy(alpha = 0.78f))
+                        .padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = AccentBlue.copy(alpha = 0.18f),
+                            border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.35f)),
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ReceiptLong,
+                                    contentDescription = null,
+                                    tint = Color(0xFF7DE3FF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            "Preview Struk",
+                            style = NotaTheme.typography.heading.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(
+                            onClick = {
+                                showLiveReceiptPreview = false
+                                onSaveFromPreview?.invoke()
+                            }
+                        ) {
+                            Text("Simpan", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, color = AccentEmerald, fontSize = 14.5.sp))
+                        }
+                        IconButton(
+                            onClick = { showLiveReceiptPreview = false },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Tutup Preview", tint = TextGray, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = ProBorder.copy(alpha = 0.7f))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        "Tampilan struk otomatis terupdate sesuai isian nota.",
+                        style = NotaTheme.typography.label.copy(fontSize = 12.sp),
+                        color = TextGray
+                    )
+
+                    liveNotaForPreview?.let { previewNota ->
+                        ThermalReceiptView(
+                            nota = previewNota,
+                            businessProfile = businessProfile
+                        )
+                    }
+
+                    Button(
+                        onClick = { showLiveReceiptPreview = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = ProCardSurfaceLight),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("Kembali ke Formulir", style = NotaTheme.typography.body.copy(color = Color.White, fontWeight = FontWeight.Bold))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
+
+        // Floating Product Picker
+        ProductMasterScreen(
+            visible = showProductPicker,
+            viewModel = viewModel,
+            onDismiss = { showProductPicker = false },
+            onSelectProduct = { selectedProduct ->
+                onProductPicked?.invoke(selectedProduct)
+                showProductPicker = false
+            }
+        )
+
+        // Floating Customer Picker
+        CustomerMasterScreen(
+            visible = showCustomerPicker,
+            viewModel = viewModel,
+            onDismiss = { showCustomerPicker = false },
+            onSelectCustomer = { selectedCustomer ->
+                onCustomerPicked?.invoke(selectedCustomer)
+                showCustomerPicker = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun CreateNotaFloatingBody(
+    viewModel: NotaViewModel,
+    notaToEdit: Nota? = null,
+    onDismiss: () -> Unit,
+    onOpenPreview: (Nota, () -> Unit) -> Unit,
+    onOpenProductPicker: ((Product) -> Unit) -> Unit,
+    onOpenCustomerPicker: ((Customer) -> Unit) -> Unit
+) {
+    val context = LocalContext.current
+    val savedNotas by viewModel.notas.collectAsState()
+    val masterProducts by viewModel.products.collectAsState()
+    val masterCustomers by viewModel.customers.collectAsState()
     var activePickerItemIndex by remember { mutableStateOf<Int?>(null) }
 
-    // 1. Unique Customers Suggestion list
-    val customerSuggestions = remember(savedNotas) {
-        savedNotas.map {
+    // 1. Unique Customers Suggestion list (dari Master Pelanggan + Riwayat Nota)
+    val customerSuggestions = remember(savedNotas, masterCustomers) {
+        val fromMaster = masterCustomers.map {
+            com.eco.nota.models.CustomerSuggestion(
+                name = it.name,
+                phoneNumber = it.phoneNumber,
+                address = it.address
+            )
+        }
+        val fromNotas = savedNotas.map {
             com.eco.nota.models.CustomerSuggestion(
                 name = it.customerName,
                 phoneNumber = it.phoneNumber,
                 address = it.address
             )
-        }.distinctBy { it.name.lowercase().trim() }
+        }
+        (fromMaster + fromNotas).distinctBy { it.name.lowercase().trim() }
     }
 
     // 2. Unique Products Suggestion list (dari Master Produk + Riwayat Nota)
@@ -310,97 +527,117 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
         }
     }
 
-    Scaffold(
-        modifier = Modifier.ambientGlow(),
-        containerColor = ProBackground,
-        topBar = {
-            TopAppBar(
-                title = { Text(if (notaToEdit != null) "Edit Nota #${notaToEdit.referenceCode}" else "Buat Nota Baru", style = NotaTheme.typography.heading, color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                actions = {
-                    Surface(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .clickable { showLiveReceiptPreview = true },
-                        shape = RoundedCornerShape(10.dp),
-                        color = AccentBlue.copy(alpha = 0.2f),
-                        border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
-                            Text("Preview Struk", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp), color = Color(0xFF7DE3FF))
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
-            )
-        },
-        bottomBar = {
-            // Dynamic Floating Bottom Bar: Live Total Preview & Save button always visible above keyboard!
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding(),
-                color = ProCardSurface,
-                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
-                shadowElevation = 8.dp
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Floating Window Top Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(ProCardSurface.copy(alpha = 0.78f))
+                .padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = AccentBlue.copy(alpha = 0.18f),
+                    border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.35f)),
+                    modifier = Modifier.size(34.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
-                            Text(
-                                "TOTAL BAYAR (${items.size} Item)",
-                                style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
-                                color = TextGray
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            "Rp ${formatCurrency(grandTotal)}",
-                            style = NotaTheme.typography.title.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold),
-                            color = AccentEmerald
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                            contentDescription = null,
+                            tint = Color(0xFF7DE3FF),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (notaToEdit != null) "Edit Nota #${notaToEdit.referenceCode}" else "Buat Nota Baru",
+                        style = NotaTheme.typography.heading.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = if (notaToEdit != null) "Perbarui data transaksi" else "Transaksi kasir cepat",
+                        style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                        color = TextMuted,
+                        maxLines = 1
+                    )
+                }
+            }
 
-                    Button(
-                        onClick = saveNotaAction,
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.height(44.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.clickable {
+                        val liveNota = Nota(
+                            id = notaToEdit?.id ?: "NOTA_${System.currentTimeMillis()}",
+                            referenceCode = referenceCode.ifBlank { "INV-PREVIEW" },
+                            customerName = customerName.ifBlank { "Pelanggan Umum" },
+                            phoneNumber = phoneNumber,
+                            address = address,
+                            date = selectedDate,
+                            total = "Rp ${formatCurrency(grandTotal)}",
+                            status = status,
+                            subtotal = subtotal,
+                            discount = discVal,
+                            shippingCost = shipVal,
+                            paymentMethod = paymentMethod,
+                            notes = notes,
+                            items = items.filter { it.name.isNotBlank() }.ifEmpty { items }
+                        )
+                        onOpenPreview(liveNota, saveNotaAction)
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    color = AccentBlue.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Simpan Nota", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp))
+                        Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
+                        Text("Struk", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFF7DE3FF))
                     }
+                }
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("create_nota_close_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Tutup Form Nota",
+                        tint = TextGray,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
         }
-    ) { innerPadding ->
+
+        HorizontalDivider(color = ProBorder.copy(alpha = 0.7f))
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // 1. TANGGAL TRANSAKSI / NOTA (PICKUP TANGGAL) & NOMOR NOTA
             DateSection(
@@ -434,6 +671,13 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                         } catch (e2: Exception) {
                             Toast.makeText(context, "Aplikasi kontak tidak ditemukan", Toast.LENGTH_SHORT).show()
                         }
+                    }
+                },
+                onOpenCustomerPicker = {
+                    onOpenCustomerPicker { selectedCustomer ->
+                        customerName = selectedCustomer.name
+                        phoneNumber = selectedCustomer.phoneNumber
+                        address = selectedCustomer.address
                     }
                 }
             )
@@ -469,7 +713,21 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 },
                 onOpenProductPicker = { index ->
                     activePickerItemIndex = index
-                    showProductPicker = true
+                    onOpenProductPicker { selectedProduct ->
+                        val idx = activePickerItemIndex ?: (items.size - 1)
+                        if (idx in items.indices) {
+                            items = items.toMutableList().also {
+                                it[idx] = it[idx].copy(
+                                    name = selectedProduct.name,
+                                    unit = selectedProduct.unit.ifBlank { "Pcs" },
+                                    price = if (selectedProduct.price > 0) selectedProduct.price.toString() else it[idx].price
+                                )
+                            }
+                            if (deletedUnits.contains(selectedProduct.unit.ifBlank { "Pcs" })) {
+                                viewModel.restoreUnit(selectedProduct.unit.ifBlank { "Pcs" })
+                            }
+                        }
+                    }
                 },
                 onDeleteUnit = { viewModel.deleteUnit(it) },
                 onRestoreUnit = { viewModel.restoreUnit(it) }
@@ -596,112 +854,53 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 }
             }
 
-            Spacer(modifier = Modifier.height(140.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
-    }
 
-    if (showLiveReceiptPreview) {
-        val liveNota = Nota(
-            id = notaToEdit?.id ?: "NOTA_${System.currentTimeMillis()}",
-            referenceCode = referenceCode.ifBlank { "INV-PREVIEW" },
-            customerName = customerName.ifBlank { "Pelanggan Umum" },
-            phoneNumber = phoneNumber,
-            address = address,
-            date = selectedDate,
-            total = "Rp ${formatCurrency(grandTotal)}",
-            status = status,
-            subtotal = subtotal,
-            discount = discVal,
-            shippingCost = shipVal,
-            paymentMethod = paymentMethod,
-            notes = notes,
-            items = items.filter { it.name.isNotBlank() }.ifEmpty { items }
-        )
-
-        Dialog(
-            onDismissRequest = { showLiveReceiptPreview = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+        // Pinned Bottom Bar inside Floating Window
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = ProCardSurface.copy(alpha = 0.96f),
+            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
+            shadowElevation = 8.dp
         ) {
-            Scaffold(
-                modifier = Modifier.ambientGlow(),
-                containerColor = ProBackground,
-                topBar = {
-                    TopAppBar(
-                        title = { Text("Preview Struk Real-Time", style = NotaTheme.typography.heading, color = Color.White) },
-                        navigationIcon = {
-                            IconButton(onClick = { showLiveReceiptPreview = false }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.White)
-                            }
-                        },
-                        actions = {
-                            TextButton(
-                                onClick = {
-                                    showLiveReceiptPreview = false
-                                    saveNotaAction()
-                                }
-                            ) {
-                                Text("Simpan", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, color = AccentEmerald, fontSize = 15.sp))
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
-                    )
-                }
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        "Tampilan struk otomatis terupdate saat Anda mengetik produk & harga.",
-                        style = NotaTheme.typography.label.copy(fontSize = 12.sp),
-                        color = TextGray
-                    )
-
-                    ThermalReceiptView(
-                        nota = liveNota,
-                        businessProfile = businessProfile
-                    )
-
-                    Button(
-                        onClick = { showLiveReceiptPreview = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = ProCardSurfaceLight),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
-                    ) {
-                        Text("Kembali ke Formulir", style = NotaTheme.typography.body.copy(color = Color.White, fontWeight = FontWeight.Bold))
-                    }
-
-                    Spacer(modifier = Modifier.height(28.dp))
-                }
-            }
-        }
-    }
-
-    if (showProductPicker) {
-        ProductMasterScreen(
-            viewModel = viewModel,
-            onDismiss = { showProductPicker = false },
-            onSelectProduct = { selectedProduct ->
-                val idx = activePickerItemIndex ?: (items.size - 1)
-                if (idx in items.indices) {
-                    items = items.toMutableList().also {
-                        it[idx] = it[idx].copy(
-                            name = selectedProduct.name,
-                            unit = selectedProduct.unit.ifBlank { "Pcs" },
-                            price = if (selectedProduct.price > 0) selectedProduct.price.toString() else it[idx].price
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(15.dp))
+                        Text(
+                            "TOTAL (${items.size} Item)",
+                            style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+                            color = TextGray
                         )
                     }
-                    if (deletedUnits.contains(selectedProduct.unit.ifBlank { "Pcs" })) {
-                        viewModel.restoreUnit(selectedProduct.unit.ifBlank { "Pcs" })
-                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        "Rp ${formatCurrency(grandTotal)}",
+                        style = NotaTheme.typography.title.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                        color = AccentEmerald
+                    )
                 }
-                showProductPicker = false
+
+                Button(
+                    onClick = saveNotaAction,
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .height(44.dp)
+                        .testTag("save_nota_button")
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Simpan Nota", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
+                }
             }
-        )
+        }
     }
 }

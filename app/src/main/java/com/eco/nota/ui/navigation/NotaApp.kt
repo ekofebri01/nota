@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.eco.nota.models.Nota
 import com.eco.nota.models.NotaViewModel
 import com.eco.nota.ui.screens.CreateNotaScreen
+import com.eco.nota.ui.screens.CustomerMasterScreen
 import com.eco.nota.ui.screens.DetailNotaScreen
 import com.eco.nota.ui.screens.HomeScreen
 import com.eco.nota.ui.screens.NotaListScreen
@@ -81,14 +83,16 @@ fun NotaApp(viewModel: NotaViewModel) {
     var selectedNota by remember { mutableStateOf<Nota?>(null) }
     var showCreateNota by remember { mutableStateOf(false) }
     var showProductMaster by remember { mutableStateOf(false) }
+    var showCustomerMaster by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var notaToEdit by remember { mutableStateOf<Nota?>(null) }
+    var cachedNotaToEdit by remember { mutableStateOf<Nota?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
 
     val notas by viewModel.notas.collectAsState()
 
     // Back handler for confirmation before exiting app on home screen
-    BackHandler(enabled = !showSettings && selectedNota == null && !showCreateNota && notaToEdit == null && !showProductMaster) {
+    BackHandler(enabled = !showSettings && selectedNota == null && !showCreateNota && notaToEdit == null && !showProductMaster && !showCustomerMaster) {
         showExitDialog = true
     }
 
@@ -147,25 +151,6 @@ fun NotaApp(viewModel: NotaViewModel) {
         return
     }
 
-    if (showCreateNota) {
-        CreateNotaScreen(viewModel = viewModel, onDismiss = { showCreateNota = false })
-        return
-    }
-
-    if (showProductMaster) {
-        ProductMasterScreen(viewModel = viewModel, onDismiss = { showProductMaster = false })
-        return
-    }
-
-    if (notaToEdit != null) {
-        CreateNotaScreen(
-            viewModel = viewModel,
-            notaToEdit = notaToEdit,
-            onDismiss = { notaToEdit = null }
-        )
-        return
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         if (selectedNota != null) {
             val currentNota = notas.find { it.id == selectedNota!!.id } ?: selectedNota!!
@@ -174,6 +159,7 @@ fun NotaApp(viewModel: NotaViewModel) {
                 viewModel = viewModel,
                 onDismiss = { selectedNota = null },
                 onEditClick = {
+                    cachedNotaToEdit = currentNota
                     notaToEdit = currentNota
                     selectedNota = null
                 }
@@ -186,6 +172,7 @@ fun NotaApp(viewModel: NotaViewModel) {
                     MainAppBar(
                         title = "Nota Kasir",
                         onProductsClicked = { showProductMaster = true },
+                        onCustomersClicked = { showCustomerMaster = true },
                         onSettingsClicked = { showSettings = true }
                     )
                 }
@@ -194,7 +181,10 @@ fun NotaApp(viewModel: NotaViewModel) {
                     HomeScreen(
                         notas = notas,
                         onNotaClick = { selectedNota = it },
-                        onCreateNotaClick = { showCreateNota = true },
+                        onCreateNotaClick = {
+                            cachedNotaToEdit = null
+                            showCreateNota = true
+                        },
                         defaultDateFilter = defaultDateFilter,
                         updateInfo = if (updateBannerDismissed) null else updateInfo,
                         downloadState = updateDownloadState,
@@ -213,6 +203,28 @@ fun NotaApp(viewModel: NotaViewModel) {
             visible = showSettings,
             viewModel = viewModel,
             onDismiss = { showSettings = false }
+        )
+
+        ProductMasterScreen(
+            visible = showProductMaster,
+            viewModel = viewModel,
+            onDismiss = { showProductMaster = false }
+        )
+
+        CustomerMasterScreen(
+            visible = showCustomerMaster,
+            viewModel = viewModel,
+            onDismiss = { showCustomerMaster = false }
+        )
+
+        CreateNotaScreen(
+            visible = showCreateNota || notaToEdit != null,
+            viewModel = viewModel,
+            notaToEdit = cachedNotaToEdit,
+            onDismiss = {
+                showCreateNota = false
+                notaToEdit = null
+            }
         )
     }
 
@@ -233,6 +245,7 @@ fun NotaApp(viewModel: NotaViewModel) {
 fun MainAppBar(
     title: String,
     onProductsClicked: () -> Unit = {},
+    onCustomersClicked: () -> Unit = {},
     onSettingsClicked: () -> Unit
 ) {
     Surface(
@@ -290,6 +303,18 @@ fun MainAppBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                IconButton(
+                    onClick = onCustomersClicked,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        Icons.Default.People,
+                        contentDescription = "Database Pelanggan",
+                        tint = Color(0xFF7DE3FF),
+                        modifier = Modifier.size(21.dp)
+                    )
+                }
+
                 IconButton(
                     onClick = onProductsClicked,
                     modifier = Modifier.size(44.dp)

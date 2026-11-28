@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.5",
+    "icon": "star",
+    "title": "Jendela Floating Buat Nota & Database (v1.8.5)",
+    "description": "Formulir Buat/Edit Nota, Preview Struk, Database Master Produk, dan Database Kontak Pelanggan kini tampil dalam jendela melayang (floating window) futuristik dengan animasi halus di atas beranda."
+  },
+  {
     "version": "1.8.4",
     "icon": "new_releases",
     "title": "Pembaruan Aplikasi (v1.8.4)",

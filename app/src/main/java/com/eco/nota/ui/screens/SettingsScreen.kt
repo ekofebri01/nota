@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.QrCode
@@ -138,6 +139,7 @@ fun SettingsScreen(
     val businessProfile by viewModel.businessProfile.collectAsState()
     var showBusinessProfile by remember { mutableStateOf(false) }
     var showProductMaster by remember { mutableStateOf(false) }
+    var showCustomerMaster by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showBackupScreen by remember { mutableStateOf(false) }
 
@@ -145,12 +147,13 @@ fun SettingsScreen(
         if (!visible) {
             showBusinessProfile = false
             showProductMaster = false
+            showCustomerMaster = false
             showAboutDialog = false
             showBackupScreen = false
         }
     }
 
-    BackHandler(enabled = visible && !showBusinessProfile && !showProductMaster && !showAboutDialog && !showBackupScreen) {
+    BackHandler(enabled = visible && !showBusinessProfile && !showProductMaster && !showCustomerMaster && !showAboutDialog && !showBackupScreen) {
         onDismiss()
     }
 
@@ -164,10 +167,6 @@ fun SettingsScreen(
 
     if (showBackupScreen) {
         BackupRestoreScreen(viewModel = viewModel, onDismiss = { showBackupScreen = false })
-    }
-
-    if (showProductMaster) {
-        ProductMasterScreen(viewModel = viewModel, onDismiss = { showProductMaster = false })
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -400,8 +399,15 @@ fun SettingsScreen(
                     SettingsItem(
                         icon = Icons.Default.Inventory2,
                         title = "Database & Master Produk",
-                        subtitle = "Kelola daftar barang, harga jual standar & satuan",
+                        subtitle = "Kelola daftar barang, kategori, SKU & harga standar",
                         onClick = { showProductMaster = true }
+                    )
+
+                    SettingsItem(
+                        icon = Icons.Default.People,
+                        title = "Database Kontak Pelanggan",
+                        subtitle = "Kelola kontak pelanggan, nomor HP & alamat tersimpan",
+                        onClick = { showCustomerMaster = true }
                     )
                 }
 
@@ -590,6 +596,19 @@ fun SettingsScreen(
                 }
             }
         }
+
+        // Database floating windows rendered above Settings floating window
+        ProductMasterScreen(
+            visible = showProductMaster,
+            viewModel = viewModel,
+            onDismiss = { showProductMaster = false }
+        )
+
+        CustomerMasterScreen(
+            visible = showCustomerMaster,
+            viewModel = viewModel,
+            onDismiss = { showCustomerMaster = false }
+        )
     }
 }
 

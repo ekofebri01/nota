@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -77,6 +78,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.eco.nota.models.Customer
 import com.eco.nota.models.NotaViewModel
+import com.eco.nota.ui.components.FloatingWindowOverlay
 import com.eco.nota.ui.theme.AccentBlue
 import com.eco.nota.ui.theme.AccentEmerald
 import com.eco.nota.ui.theme.AccentRose
@@ -91,6 +93,7 @@ import com.eco.nota.ui.theme.TextMuted
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerMasterScreen(
+    visible: Boolean = true,
     viewModel: NotaViewModel,
     onDismiss: () -> Unit,
     onSelectCustomer: ((Customer) -> Unit)? = null
@@ -103,6 +106,10 @@ fun CustomerMasterScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var customerToDelete by remember { mutableStateOf<Customer?>(null) }
 
+    BackHandler(enabled = visible && !showAddDialog && customerToEdit == null && customerToDelete == null) {
+        onDismiss()
+    }
+
     val filteredCustomers = remember(customers, searchQuery) {
         customers.filter { c ->
             searchQuery.isBlank() ||
@@ -112,58 +119,83 @@ fun CustomerMasterScreen(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.ambientGlow(),
-        containerColor = ProBackground,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (onSelectCustomer != null) "Pilih Pelanggan" else "Database Kontak Pelanggan",
-                            style = NotaTheme.typography.heading.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                        Text(
-                            text = "${customers.size} pelanggan tersimpan",
-                            style = NotaTheme.typography.label.copy(fontSize = 11.sp),
-                            color = TextMuted
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = AccentBlue,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.testTag("add_customer_fab")
-            ) {
+    FloatingWindowOverlay(
+        visible = visible,
+        onDismiss = onDismiss,
+        maxWidth = 580.dp,
+        heightFraction = 0.90f,
+        fillMaxHeight = true,
+        windowTestTag = "customer_master_floating_window"
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Floating Window Top Header
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ProCardSurface.copy(alpha = 0.78f))
+                        .padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Tambah Pelanggan")
-                    Text("Tambah Pelanggan", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = AccentBlue.copy(alpha = 0.18f),
+                            border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.35f)),
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color(0xFF7DE3FF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (onSelectCustomer != null) "Pilih Pelanggan" else "Database Pelanggan",
+                                style = NotaTheme.typography.heading.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
+                                color = Color.White,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = "${customers.size} pelanggan tersimpan",
+                                style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                                color = TextMuted
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("customer_master_close_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Tutup Database Pelanggan",
+                            tint = TextGray,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-        ) {
+
+                HorizontalDivider(color = ProBorder.copy(alpha = 0.7f))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp)
+                ) {
             // Search Bar
             Surface(
                 modifier = Modifier
@@ -298,10 +330,32 @@ fun CustomerMasterScreen(
                     }
                 }
             }
+                }
+            }
+
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = AccentBlue,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .testTag("add_customer_fab")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Tambah Pelanggan")
+                    Text("Tambah Pelanggan", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
+                }
+            }
         }
     }
 
-    if (showAddDialog || customerToEdit != null) {
+    if (visible && (showAddDialog || customerToEdit != null)) {
         CustomerFormDialog(
             initialCustomer = customerToEdit,
             onDismiss = {
@@ -309,19 +363,23 @@ fun CustomerMasterScreen(
                 customerToEdit = null
             },
             onSave = { savedCustomer ->
-                viewModel.saveCustomer(savedCustomer)
-                Toast.makeText(
-                    context,
-                    if (customerToEdit != null) "Pelanggan berhasil diperbarui" else "Pelanggan berhasil ditambahkan",
-                    Toast.LENGTH_SHORT
-                ).show()
-                showAddDialog = false
-                customerToEdit = null
+                val isEditing = customerToEdit != null
+                viewModel.saveCustomer(savedCustomer) { success, message ->
+                    Toast.makeText(
+                        context,
+                        if (success) (if (isEditing) "Pelanggan berhasil diperbarui" else "Pelanggan berhasil ditambahkan") else message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    if (success) {
+                        showAddDialog = false
+                        customerToEdit = null
+                    }
+                }
             }
         )
     }
 
-    if (customerToDelete != null) {
+    if (visible && customerToDelete != null) {
         AlertDialog(
             onDismissRequest = { customerToDelete = null },
             title = {

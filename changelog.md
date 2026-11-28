@@ -4,6 +4,13 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.8.5] — Jendela Floating Buat Nota & Database (2026-11-28)
+- **Jendela Floating Buat & Edit Nota**: Formulir **Buat Nota Baru**, **Edit Nota**, dan **Preview Struk** kini tampil sebagai jendela melayang (*floating window*) modern berborder gradien dengan animasi spring halus di atas layar utama.
+- **Jendela Floating Database Produk & Pelanggan**: Menu **Database Master Produk** dan **Database Kontak Pelanggan** (termasuk saat dipilih sebagai picker di form buat nota maupun dibuka dari beranda atau pengaturan) kini hadir dengan desain *floating window* futuristik yang seragam.
+- **Akses Cepat Database Pelanggan**: Menambahkan tombol pintas Database Pelanggan di header beranda serta menu **Database Kontak Pelanggan** di halaman **Pengaturan**.
+
+---
+
 ## [v1.8.4] — Pembaruan Aplikasi (2026-11-28)
 - feat: tampilan futuristik (tema, border gradien, glow, splash)
 

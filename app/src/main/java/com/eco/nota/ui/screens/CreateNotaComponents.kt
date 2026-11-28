@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Remove
@@ -376,7 +377,8 @@ fun BuyerInfoSection(
     onAddressChange: (String) -> Unit,
     customerSuggestions: List<CustomerSuggestion> = emptyList(),
     onSuggestionSelected: (CustomerSuggestion) -> Unit = {},
-    onPickContact: () -> Unit = {}
+    onPickContact: () -> Unit = {},
+    onOpenCustomerPicker: (() -> Unit)? = null
 ) {
     var showSuggestions by remember { mutableStateOf(false) }
     val filteredSuggestions = remember(name, customerSuggestions) {
@@ -415,22 +417,42 @@ fun BuyerInfoSection(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Default.Person, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(16.dp))
-                    Text("INFORMASI PELANGGAN", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = TextMuted)
+                    Text("PELANGGAN", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = TextMuted)
                 }
-                
-                Surface(
-                    modifier = Modifier.clickable { onPickContact() },
-                    shape = RoundedCornerShape(8.dp),
-                    color = AccentBlue.copy(alpha = 0.18f),
-                    border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (onOpenCustomerPicker != null) {
+                        Surface(
+                            modifier = Modifier.clickable { onOpenCustomerPicker() },
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF7DE3FF).copy(alpha = 0.16f),
+                            border = BorderStroke(1.dp, Color(0xFF7DE3FF).copy(alpha = 0.38f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.People, contentDescription = "Pilih dari Database", tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
+                                Text("Master", style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
+                            }
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier.clickable { onPickContact() },
+                        shape = RoundedCornerShape(8.dp),
+                        color = AccentBlue.copy(alpha = 0.18f),
+                        border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
                     ) {
-                        Icon(Icons.Default.Phone, contentDescription = "Pilih dari Kontak", tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
-                        Text("Ambil Kontak", style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
+                        Row(
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.Phone, contentDescription = "Pilih dari Kontak", tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
+                            Text("Kontak", style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
+                        }
                     }
                 }
             }

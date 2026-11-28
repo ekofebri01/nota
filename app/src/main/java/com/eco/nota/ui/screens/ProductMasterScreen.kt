@@ -77,6 +77,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.eco.nota.models.NotaViewModel
 import com.eco.nota.models.Product
+import com.eco.nota.ui.components.FloatingWindowOverlay
 import com.eco.nota.ui.theme.AccentBlue
 import com.eco.nota.ui.theme.AccentEmerald
 import com.eco.nota.ui.theme.AccentRose
@@ -101,6 +102,7 @@ private fun formatRupiah(amount: Long): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductMasterScreen(
+    visible: Boolean = true,
     viewModel: NotaViewModel,
     onDismiss: () -> Unit,
     onSelectProduct: ((Product) -> Unit)? = null
@@ -117,7 +119,9 @@ fun ProductMasterScreen(
     var productToDelete by remember { mutableStateOf<Product?>(null) }
     var isImporting by remember { mutableStateOf(false) }
 
-    BackHandler(onBack = onDismiss)
+    BackHandler(enabled = visible && !showAddDialog && productToEdit == null && productToDelete == null) {
+        onDismiss()
+    }
 
     val categories = remember(products) {
         listOf("Semua") + products.map { it.category.trim() }.filter { it.isNotBlank() }.distinct().sorted()
@@ -135,36 +139,67 @@ fun ProductMasterScreen(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.ambientGlow(),
-        containerColor = ProBackground,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (onSelectProduct != null) "Pilih Produk" else "Database Produk & Barang",
-                            style = NotaTheme.typography.heading.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                        Text(
-                            text = "${products.size} produk tersimpan",
-                            style = NotaTheme.typography.label.copy(fontSize = 11.sp),
-                            color = TextMuted
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.White)
-                    }
-                },
-                actions = {
-                    if (notas.isNotEmpty() && onSelectProduct == null) {
+    FloatingWindowOverlay(
+        visible = visible,
+        onDismiss = onDismiss,
+        maxWidth = 580.dp,
+        heightFraction = 0.90f,
+        fillMaxHeight = true,
+        windowTestTag = "product_master_floating_window"
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Floating Window Top Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ProCardSurface.copy(alpha = 0.78f))
+                        .padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         Surface(
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .clickable(enabled = !isImporting) {
+                            shape = RoundedCornerShape(10.dp),
+                            color = AccentBlue.copy(alpha = 0.18f),
+                            border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.35f)),
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Inventory2,
+                                    contentDescription = null,
+                                    tint = Color(0xFF7DE3FF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (onSelectProduct != null) "Pilih Produk" else "Database Produk",
+                                style = NotaTheme.typography.heading.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
+                                color = Color.White,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = "${products.size} produk tersimpan",
+                                style = NotaTheme.typography.label.copy(fontSize = 11.sp),
+                                color = TextMuted
+                            )
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (notas.isNotEmpty() && onSelectProduct == null) {
+                            Surface(
+                                modifier = Modifier.clickable(enabled = !isImporting) {
                                     isImporting = true
                                     viewModel.importProductsFromNotas { importedCount ->
                                         isImporting = false
@@ -175,53 +210,49 @@ fun ProductMasterScreen(
                                         }
                                     }
                                 },
-                            shape = RoundedCornerShape(10.dp),
-                            color = AccentBlue.copy(alpha = 0.18f),
-                            border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                shape = RoundedCornerShape(10.dp),
+                                color = AccentBlue.copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
                             ) {
-                                if (isImporting) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Color(0xFF7DE3FF))
-                                } else {
-                                    Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(15.dp))
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    if (isImporting) {
+                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Color(0xFF7DE3FF))
+                                    } else {
+                                        Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
+                                    }
+                                    Text("Impor", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFF7DE3FF))
                                 }
-                                Text("Impor Nota", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFF7DE3FF))
                             }
                         }
+
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .testTag("product_master_close_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup Database Produk",
+                                tint = TextGray,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ProBackground)
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = AccentBlue,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.testTag("add_product_fab")
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
-                    Text("Tambah Produk", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
                 }
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-        ) {
+
+                HorizontalDivider(color = ProBorder.copy(alpha = 0.7f))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp)
+                ) {
             // Search Bar
             Surface(
                 modifier = Modifier
@@ -409,11 +440,33 @@ fun ProductMasterScreen(
                     }
                 }
             }
+                }
+            }
+
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = AccentBlue,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .testTag("add_product_fab")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
+                    Text("Tambah Produk", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.5.sp))
+                }
+            }
         }
     }
 
     // Add or Edit Product Dialog
-    if (showAddDialog || productToEdit != null) {
+    if (visible && (showAddDialog || productToEdit != null)) {
         ProductFormDialog(
             initialProduct = productToEdit,
             existingCategories = categories.drop(1), // buang "Semua"
@@ -422,20 +475,24 @@ fun ProductMasterScreen(
                 productToEdit = null
             },
             onSave = { updatedProduct ->
-                viewModel.saveProduct(updatedProduct)
-                Toast.makeText(
-                    context,
-                    if (productToEdit != null) "Produk berhasil diperbarui" else "Produk berhasil ditambahkan",
-                    Toast.LENGTH_SHORT
-                ).show()
-                showAddDialog = false
-                productToEdit = null
+                val isEditing = productToEdit != null
+                viewModel.saveProduct(updatedProduct) { success, message ->
+                    Toast.makeText(
+                        context,
+                        if (success) (if (isEditing) "Produk berhasil diperbarui" else "Produk berhasil ditambahkan") else message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    if (success) {
+                        showAddDialog = false
+                        productToEdit = null
+                    }
+                }
             }
         )
     }
 
     // Delete Confirmation Dialog
-    if (productToDelete != null) {
+    if (visible && productToDelete != null) {
         AlertDialog(
             onDismissRequest = { productToDelete = null },
             title = {
