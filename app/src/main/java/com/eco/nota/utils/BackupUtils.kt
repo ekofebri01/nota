@@ -151,10 +151,18 @@ object BackupUtils {
                 File(publicDocs, filename).writeBytes(zipBytes)
             } catch (e: Exception) { }
 
+            // 6. Folder pilihan pengguna (SAF) - tanpa izin "Akses semua file"
+            val savedToSaf = SafBackup.write(context, filename, "application/zip", zipBytes)
+
             if (showToast) {
+                val where = if (savedToSaf) {
+                    "folder backup pilihan Anda (${SafBackup.getFolderLabel(context) ?: "-"})"
+                } else {
+                    "penyimpanan aplikasi. Pilih folder backup di menu Kelola Data & Cadangan agar tersimpan di folder yang mudah diakses"
+                }
                 Toast.makeText(
                     context,
-                    "✅ Backup ZIP (Data + Gambar) tersimpan di:\n/storage/emulated/0/backups/NotaKasir/nota_backup.zip",
+                    "✅ Backup ZIP (Data + Gambar) tersimpan di $where",
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -214,7 +222,10 @@ object BackupUtils {
                 File(publicDocs, filename).writeText(jsonStr)
             } catch (e: Exception) { }
 
-            Toast.makeText(context, "✅ Backup berhasil disimpan di:\n/storage/emulated/0/backups/NotaKasir/nota_backup.json", Toast.LENGTH_LONG).show()
+            // 5. Folder pilihan pengguna (SAF)
+            SafBackup.write(context, filename, "application/json", jsonStr.toByteArray(Charsets.UTF_8))
+
+            Toast.makeText(context, "✅ Backup JSON berhasil disimpan", Toast.LENGTH_LONG).show()
             "/storage/emulated/0/backups/NotaKasir/nota_backup.json"
         } catch (e: Exception) {
             Toast.makeText(context, "❌ Gagal ekspor berkas: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
@@ -382,12 +393,11 @@ object BackupUtils {
      */
     fun shareBackupZip(context: Context) {
         try {
+            // Hanya lokasi di dalam folder aplikasi yang bisa dibagikan lewat FileProvider
+            // (file_paths.xml sudah dipersempit). Salinan ini selalu ikut diperbarui tiap backup.
             val candidateFiles = listOf(
-                File("/storage/emulated/0/backups/NotaKasir/nota_backup.zip"),
-                File(Environment.getExternalStorageDirectory(), "backups/NotaKasir/nota_backup.zip"),
-                File(context.getExternalFilesDir(null), "backups/NotaKasir/nota_backup.zip"),
                 File(context.filesDir, "backups/NotaKasir/nota_backup.zip"),
-                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "NotaKasir/nota_backup.zip")
+                File(context.getExternalFilesDir(null), "backups/NotaKasir/nota_backup.zip")
             )
             val fileToShare = candidateFiles.firstOrNull { it.exists() && it.length() > 0 }
             if (fileToShare == null) {

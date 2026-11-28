@@ -1076,9 +1076,16 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 File(publicDocs, "nota_backup.json").writeText(prettyJson)
             } catch (e: Exception) { }
 
+            // Folder pilihan pengguna (SAF) - tanpa izin "Akses semua file"
+            val writtenToSaf = com.eco.nota.utils.SafBackup.write(
+                app, "nota_backup.json", "application/json", prettyJson.toByteArray(Charsets.UTF_8)
+            )
+
             if (showToast) {
                 withContext(Dispatchers.Main) {
-                    val msg = if (writtenToPrimary) {
+                    val msg = if (writtenToSaf) {
+                        "✅ Auto-Backup (ZIP + Gambar & JSON) disimpan di folder:\n${com.eco.nota.utils.SafBackup.getFolderLabel(app) ?: ""}"
+                    } else if (writtenToPrimary) {
                         "✅ Auto-Backup (ZIP + Gambar & JSON) disimpan di:\n/storage/emulated/0/backups/NotaKasir/"
                     } else {
                         "✅ Auto-Backup Berhasil (${fullNotasList.size} nota & gambar tersimpan)"
@@ -1099,6 +1106,28 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val app = getApplication<Application>()
+
+                // 0. Folder backup pilihan pengguna (SAF) didahulukan: ZIP dulu, lalu JSON
+                try {
+                    val safZip = com.eco.nota.utils.SafBackup.read(app, "nota_backup.zip")
+                    val safContainer = if (safZip != null) {
+                        com.eco.nota.utils.BackupUtils.importFromZip(app, java.io.ByteArrayInputStream(safZip))
+                    } else {
+                        com.eco.nota.utils.SafBackup.read(app, "nota_backup.json")?.let {
+                            com.eco.nota.utils.BackupUtils.importFromJson(app, String(it, Charsets.UTF_8))
+                        }
+                    }
+                    if (safContainer != null && (safContainer.notas.isNotEmpty() || safContainer.businessProfile != null)) {
+                        importBackup(
+                            container = safContainer,
+                            onSuccess = { onSuccess(safContainer.notas.size) },
+                            onError = { onError(it) }
+                        )
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    // Lanjut ke lokasi lama bila gagal
+                }
 
                 // 1. Coba pulihkan dari file .ZIP terlebih dahulu (karena memuat gambar lengkap)
                 val candidateZipFiles = listOf(

@@ -122,6 +122,7 @@ import com.eco.nota.ui.components.SettingsItem
 import com.eco.nota.ui.components.TextButton
 import com.eco.nota.ui.theme.*
 import com.eco.nota.utils.BackupUtils
+import com.eco.nota.utils.SafBackup
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -788,6 +789,21 @@ fun BusinessProfileScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
 fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
     val context = LocalContext.current
 
+    // Folder backup pilihan pengguna (SAF) - dipilih sekali, lalu auto-backup menimpa file di sana
+    var backupFolderLabel by remember { mutableStateOf(SafBackup.getFolderLabel(context)) }
+    val pickBackupFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { treeUri ->
+        if (treeUri != null) {
+            if (SafBackup.saveTreeUri(context, treeUri)) {
+                backupFolderLabel = SafBackup.getFolderLabel(context)
+                viewModel.triggerAutoBackup(showToast = true)
+            } else {
+                Toast.makeText(context, "Gagal menyimpan izin folder. Coba pilih folder lain.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
             containerColor = ProBackground,
@@ -845,7 +861,7 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                         ) {
                             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    text = "/storage/emulated/0/backups/NotaKasir/",
+                                    text = backupFolderLabel?.let { "📁 $it" } ?: "Belum ada folder dipilih",
                                     style = TextStyle(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                                 )
                                 Text(
@@ -865,32 +881,35 @@ fun BackupRestoreScreen(viewModel: NotaViewModel, onDismiss: () -> Unit) {
                             color = TextGray
                         )
 
-                        // Check All Files Access Permission on Android 11+
-                        val isAllFilesPermitted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            Environment.isExternalStorageManager()
-                        } else true
-
-                        if (!isAllFilesPermitted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            Button(
-                                onClick = {
-                                    try {
-                                        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                                            data = Uri.parse("package:${context.packageName}")
-                                        }
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                                        context.startActivity(intent)
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.Security, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Beri Izin Akses Semua File (Storage)", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, color = Color.Black))
-                            }
+                        // Pilih folder backup sekali (SAF) - tidak perlu izin "Akses semua file"
+                        Button(
+                            onClick = {
+                                try {
+                                    pickBackupFolderLauncher.launch(null)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Pemilih folder tidak tersedia di perangkat ini.", Toast.LENGTH_LONG).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (backupFolderLabel == null) Color(0xFFF59E0B) else ProBorder
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Default.Security,
+                                contentDescription = null,
+                                tint = if (backupFolderLabel == null) Color.Black else Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (backupFolderLabel == null) "Pilih Folder Backup (cukup sekali)" else "Ganti Folder Backup",
+                                style = NotaTheme.typography.body.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (backupFolderLabel == null) Color.Black else Color.White
+                                )
+                            )
                         }
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

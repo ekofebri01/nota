@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="external_files" path="." />
-    <external-files-path name="external_files_path" path="." />
-    <cache-path name="cache_files" path="." />
-    <files-path name="internal_files" path="." />
+    <!-- APK update yang diunduh (UpdateManager) -->
+    <cache-path name="updates" path="updates/" />
+    <!-- Gambar nota yang dibagikan (ImageUtils.shareBitmap) -->
+    <cache-path name="images" path="images/" />
+    <!-- Berkas backup ZIP yang dibagikan (BackupUtils.shareBackupZip) -->
+    <files-path name="backups" path="backups/" />
+    <external-files-path name="backups_ext" path="backups/" />
+    <!-- Fallback simpan gambar nota (ImageUtils.saveBitmap) -->
+    <external-files-path name="pictures" path="Pictures/NotaPro/" />
 </paths>
