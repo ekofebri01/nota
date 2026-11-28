@@ -33,6 +33,17 @@ data class NotaItemInput(
     val isDone: Boolean = false
 )
 
+@Serializable
+data class Product(
+    val id: String = "",
+    val name: String = "",
+    val price: Long = 0L,
+    val unit: String = "Pcs",
+    val category: String = "",
+    val code: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
 data class CustomerSuggestion(
     val name: String,
     val phoneNumber: String = "",

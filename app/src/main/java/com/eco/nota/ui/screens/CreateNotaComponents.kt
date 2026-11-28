@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -386,9 +387,9 @@ fun BuyerInfoSection(
     }
     val customerBringIntoViewRequester = remember { BringIntoViewRequester() }
 
-    LaunchedEffect(showSuggestions, filteredSuggestions.size, name) {
+    LaunchedEffect(showSuggestions) {
         if (showSuggestions && filteredSuggestions.isNotEmpty()) {
-            delay(100)
+            delay(80)
             try {
                 customerBringIntoViewRequester.bringIntoView()
             } catch (e: Exception) {
@@ -544,6 +545,7 @@ fun ItemsSection(
     savedUnitsList: List<String> = emptyList(),
     deletedUnits: Set<String> = emptySet(),
     onProductSelected: (Int, NotaItemInput) -> Unit = { _, _ -> },
+    onOpenProductPicker: ((Int) -> Unit)? = null,
     onDeleteUnit: (String) -> Unit = {},
     onRestoreUnit: (String) -> Unit = {}
 ) {
@@ -589,22 +591,54 @@ fun ItemsSection(
                     Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(16.dp))
                     Text("DAFTAR BARANG (${items.size})", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = TextMuted)
                 }
-                Surface(
-                    modifier = Modifier.clickable {
-                        onAddItem()
-                        editingIndex = items.size // Open the newly created item
-                    },
-                    shape = RoundedCornerShape(10.dp),
-                    color = AccentBlue.copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, AccentBlue)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (onOpenProductPicker != null) {
+                        Surface(
+                            modifier = Modifier.clickable {
+                                if (items.isNotEmpty() && items.last().name.isBlank()) {
+                                    val lastIdx = items.lastIndex
+                                    editingIndex = lastIdx
+                                    onOpenProductPicker(lastIdx)
+                                } else {
+                                    onAddItem()
+                                    val newIdx = items.size
+                                    editingIndex = newIdx
+                                    onOpenProductPicker(newIdx)
+                                }
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFA5B4FC).copy(alpha = 0.18f),
+                            border = BorderStroke(1.dp, Color(0xFFA5B4FC).copy(alpha = 0.4f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(14.dp))
+                                Text("Pilih Master", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFFA5B4FC))
+                            }
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier.clickable {
+                            onAddItem()
+                            editingIndex = items.size // Open the newly created item
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        color = AccentBlue.copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, AccentBlue)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
-                        Text("Tambah", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                            Text("Tambah", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                        }
                     }
                 }
             }
@@ -707,9 +741,9 @@ fun ItemsSection(
                     }
                     val prodBringIntoViewRequester = remember { BringIntoViewRequester() }
 
-                    LaunchedEffect(showProductSuggestions, filteredProdSuggestions.size, item.name) {
+                    LaunchedEffect(showProductSuggestions) {
                         if (showProductSuggestions && filteredProdSuggestions.isNotEmpty()) {
-                            delay(120)
+                            delay(80)
                             try {
                                 prodBringIntoViewRequester.bringIntoView()
                             } catch (e: Exception) {
@@ -734,17 +768,40 @@ fun ItemsSection(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = AccentBlue.copy(alpha = 0.25f),
-                                    border = BorderStroke(1.dp, AccentBlue)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Text(
-                                        "MENGISI ITEM #${index + 1}",
-                                        style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                                        color = Color(0xFFA5B4FC),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = AccentBlue.copy(alpha = 0.25f),
+                                        border = BorderStroke(1.dp, AccentBlue)
+                                    ) {
+                                        Text(
+                                            "MENGISI ITEM #${index + 1}",
+                                            style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                                            color = Color(0xFFA5B4FC),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
+                                    }
+
+                                    if (onOpenProductPicker != null) {
+                                        Surface(
+                                            modifier = Modifier.clickable { onOpenProductPicker(index) },
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color(0xFFA5B4FC).copy(alpha = 0.16f),
+                                            border = BorderStroke(1.dp, Color(0xFFA5B4FC).copy(alpha = 0.35f))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(13.dp))
+                                                Text("Pilih Master", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                                            }
+                                        }
+                                    }
                                 }
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

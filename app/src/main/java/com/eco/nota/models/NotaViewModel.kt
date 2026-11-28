@@ -85,9 +85,42 @@ interface NotaDao {
     suspend fun deleteAll()
 }
 
-@Database(entities = [NotaEntity::class], version = 2, exportSchema = false)
+@Entity(tableName = "products")
+data class ProductEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val price: Long = 0L,
+    val unit: String = "Pcs",
+    val category: String = "",
+    val code: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface ProductDao {
+    @Query("SELECT * FROM products ORDER BY name COLLATE NOCASE ASC")
+    fun getAllProducts(): kotlinx.coroutines.flow.Flow<List<ProductEntity>>
+
+    @Query("SELECT * FROM products ORDER BY name COLLATE NOCASE ASC")
+    suspend fun getAllProductsDirect(): List<ProductEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertProduct(product: ProductEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertProducts(products: List<ProductEntity>)
+
+    @Query("DELETE FROM products WHERE id = :id")
+    suspend fun deleteProduct(id: String)
+
+    @Query("DELETE FROM products")
+    suspend fun deleteAll()
+}
+
+@Database(entities = [NotaEntity::class, ProductEntity::class], version = 3, exportSchema = false)
 abstract class NotaDatabase : RoomDatabase() {
     abstract fun notaDao(): NotaDao
+    abstract fun productDao(): ProductDao
 
     companion object {
         @Volatile
@@ -99,13 +132,29 @@ abstract class NotaDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS products (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        price INTEGER NOT NULL DEFAULT 0,
+                        unit TEXT NOT NULL DEFAULT 'Pcs',
+                        category TEXT NOT NULL DEFAULT '',
+                        code TEXT NOT NULL DEFAULT '',
+                        createdAt INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getDatabase(context: Context): NotaDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     NotaDatabase::class.java,
                     "nota_database"
-                ).addMigrations(MIGRATION_1_2).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
                 INSTANCE = instance
                 instance
             }
@@ -115,8 +164,25 @@ abstract class NotaDatabase : RoomDatabase() {
 
 class NotaViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = NotaDatabase.getDatabase(application).notaDao()
+    private val productDao = NotaDatabase.getDatabase(application).productDao()
     private val prefs = application.getSharedPreferences("nota_pro_prefs", Context.MODE_PRIVATE)
     private val jsonFormat = Json { ignoreUnknownKeys = true }
+
+    val products: StateFlow<List<Product>> = productDao.getAllProducts()
+        .map { entities ->
+            entities.map { entity ->
+                Product(
+                    id = entity.id,
+                    name = entity.name,
+                    price = entity.price,
+                    unit = entity.unit,
+                    category = entity.category,
+                    code = entity.code,
+                    createdAt = entity.createdAt
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val notas: StateFlow<List<Nota>> = dao.getAllNotas()
         .map { entities ->
@@ -175,9 +241,9 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentAppVersion: String = try {
         val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
-        pInfo.versionName ?: "1.7.8"
+        pInfo.versionName ?: "1.8.0"
     } catch (e: Exception) {
-        "1.7.8"
+        "1.8.0"
     }
 
     private val _githubRepo = MutableStateFlow(
@@ -502,6 +568,75 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun saveProduct(product: Product) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val id = if (product.id.isBlank()) "PROD_${System.currentTimeMillis()}" else product.id
+            val entity = ProductEntity(
+                id = id,
+                name = product.name.trim(),
+                price = product.price,
+                unit = product.unit.trim().ifBlank { "Pcs" },
+                category = product.category.trim(),
+                code = product.code.trim(),
+                createdAt = if (product.createdAt > 0) product.createdAt else System.currentTimeMillis()
+            )
+            productDao.insertProduct(entity)
+            performAutoBackup(showToast = false)
+        }
+    }
+
+    fun deleteProduct(productId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            productDao.deleteProduct(productId)
+            performAutoBackup(showToast = false)
+        }
+    }
+
+    fun importProductsFromNotas(onComplete: (Int) -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentNotas = dao.getAllNotasDirect()
+            val existingProducts = productDao.getAllProductsDirect().map { it.name.lowercase().trim() }.toSet()
+            val newEntities = mutableListOf<ProductEntity>()
+
+            currentNotas.forEach { entity ->
+                try {
+                    val items = jsonFormat.decodeFromString<List<NotaItemInput>>(entity.itemsJson)
+                    items.forEach { item ->
+                        val cleanName = item.name.trim()
+                        if (cleanName.isNotBlank() &&
+                            !existingProducts.contains(cleanName.lowercase()) &&
+                            newEntities.none { it.name.equals(cleanName, ignoreCase = true) }
+                        ) {
+                            val priceVal = item.price.trim().replace(".", "").replace(",", "").toLongOrNull() ?: 0L
+                            val unitVal = item.unit.trim().ifBlank { "Pcs" }
+                            newEntities.add(
+                                ProductEntity(
+                                    id = "PROD_${System.currentTimeMillis()}_${newEntities.size}",
+                                    name = cleanName,
+                                    price = priceVal,
+                                    unit = unitVal,
+                                    category = "",
+                                    code = "",
+                                    createdAt = System.currentTimeMillis()
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    // ignore
+                }
+            }
+
+            if (newEntities.isNotEmpty()) {
+                productDao.insertProducts(newEntities)
+                performAutoBackup(showToast = false)
+            }
+            withContext(Dispatchers.Main) {
+                onComplete(newEntities.size)
+            }
+        }
+    }
+
     private fun loadDeletedUnits(): Set<String> {
         return prefs.getStringSet("deleted_units", emptySet()) ?: emptySet()
     }
@@ -608,6 +743,19 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     )
                     dao.insertNota(entity)
                 }
+                for (prod in container.products) {
+                    val prodId = prod.id.ifBlank { "PROD_${System.currentTimeMillis()}" }
+                    val prodEntity = ProductEntity(
+                        id = prodId,
+                        name = prod.name,
+                        price = prod.price,
+                        unit = prod.unit.ifBlank { "Pcs" },
+                        category = prod.category,
+                        code = prod.code,
+                        createdAt = if (prod.createdAt > 0) prod.createdAt else System.currentTimeMillis()
+                    )
+                    productDao.insertProduct(prodEntity)
+                }
                 performAutoBackup(showToast = false)
                 onSuccess()
             } catch (e: Exception) {
@@ -648,10 +796,24 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
+            val productEntities = productDao.getAllProductsDirect()
+            val productList = productEntities.map {
+                Product(
+                    id = it.id,
+                    name = it.name,
+                    price = it.price,
+                    unit = it.unit,
+                    category = it.category,
+                    code = it.code,
+                    createdAt = it.createdAt
+                )
+            }
+
             val container = BackupContainer(
                 businessProfile = _businessProfile.value,
                 invoiceConfig = _invoiceConfig.value,
-                notas = fullNotasList
+                notas = fullNotasList,
+                products = productList
             )
             val prettyJson = Json { prettyPrint = true; ignoreUnknownKeys = true }.encodeToString(container)
 
@@ -664,6 +826,7 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     notas = fullNotasList,
                     businessProfile = _businessProfile.value,
                     invoiceConfig = _invoiceConfig.value,
+                    products = productList,
                     showToast = false
                 )
             } catch (e: Exception) { }

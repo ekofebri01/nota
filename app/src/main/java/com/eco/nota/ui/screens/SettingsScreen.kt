@@ -61,6 +61,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Payments
@@ -134,18 +135,20 @@ fun SettingsScreen(
     val context = LocalContext.current
     val businessProfile by viewModel.businessProfile.collectAsState()
     var showBusinessProfile by remember { mutableStateOf(false) }
+    var showProductMaster by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showBackupScreen by remember { mutableStateOf(false) }
 
     LaunchedEffect(visible) {
         if (!visible) {
             showBusinessProfile = false
+            showProductMaster = false
             showAboutDialog = false
             showBackupScreen = false
         }
     }
 
-    BackHandler(enabled = visible && !showBusinessProfile && !showAboutDialog && !showBackupScreen) {
+    BackHandler(enabled = visible && !showBusinessProfile && !showProductMaster && !showAboutDialog && !showBackupScreen) {
         onDismiss()
     }
 
@@ -159,6 +162,10 @@ fun SettingsScreen(
 
     if (showBackupScreen) {
         BackupRestoreScreen(viewModel = viewModel, onDismiss = { showBackupScreen = false })
+    }
+
+    if (showProductMaster) {
+        ProductMasterScreen(viewModel = viewModel, onDismiss = { showProductMaster = false })
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -386,6 +393,13 @@ fun SettingsScreen(
                         title = "Profil Bisnis",
                         subtitle = "Logo, Nama, Alamat, Kontak, Rekening Bank & QRIS",
                         onClick = { showBusinessProfile = true }
+                    )
+
+                    SettingsItem(
+                        icon = Icons.Default.Inventory2,
+                        title = "Database & Master Produk",
+                        subtitle = "Kelola daftar barang, harga jual standar & satuan",
+                        onClick = { showProductMaster = true }
                     )
                 }
 

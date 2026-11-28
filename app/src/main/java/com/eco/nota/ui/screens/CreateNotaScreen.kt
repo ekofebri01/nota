@@ -56,6 +56,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,8 +93,11 @@ import java.util.Locale
 fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val savedNotas by viewModel.notas.collectAsState()
+    val masterProducts by viewModel.products.collectAsState()
     val businessProfile by viewModel.businessProfile.collectAsState()
     var showLiveReceiptPreview by remember { mutableStateOf(false) }
+    var showProductPicker by remember { mutableStateOf(false) }
+    var activePickerItemIndex by remember { mutableStateOf<Int?>(null) }
 
     // 1. Unique Customers Suggestion list
     val customerSuggestions = remember(savedNotas) {
@@ -106,22 +110,33 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
         }.distinctBy { it.name.lowercase().trim() }
     }
 
-    // 2. Unique Products Suggestion list
-    val productSuggestions = remember(savedNotas) {
-        savedNotas.flatMap { it.items }.map {
+    // 2. Unique Products Suggestion list (dari Master Produk + Riwayat Nota)
+    val productSuggestions = remember(savedNotas, masterProducts) {
+        val fromMaster = masterProducts.map {
+            NotaItemInput(
+                name = it.name,
+                quantity = "1",
+                unit = it.unit.ifBlank { "Pcs" },
+                price = if (it.price > 0) it.price.toString() else ""
+            )
+        }
+        val fromNotas = savedNotas.flatMap { it.items }.map {
             NotaItemInput(
                 name = it.name,
                 quantity = "1",
                 unit = it.unit,
                 price = it.price
             )
-        }.distinctBy { it.name.lowercase().trim() }
+        }
+        (fromMaster + fromNotas).distinctBy { it.name.lowercase().trim() }
     }
 
-    // 3. Unique Saved Units list from all previous transactions
+    // 3. Unique Saved Units list from all previous transactions & master products
     val deletedUnits by viewModel.deletedUnits.collectAsState()
-    val savedUnitsList = remember(savedNotas, deletedUnits) {
-        savedNotas.flatMap { it.items }.map { it.unit.trim() }.filter { it.isNotEmpty() && !deletedUnits.contains(it) }.distinct()
+    val savedUnitsList = remember(savedNotas, masterProducts, deletedUnits) {
+        val fromNotas = savedNotas.flatMap { it.items }.map { it.unit.trim() }
+        val fromMaster = masterProducts.map { it.unit.trim() }
+        (fromNotas + fromMaster).filter { it.isNotEmpty() && !deletedUnits.contains(it) }.distinct()
     }
 
     var customerName by remember { mutableStateOf(notaToEdit?.customerName ?: "") }
@@ -249,15 +264,19 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
     var shippingCost by remember { mutableStateOf(if (notaToEdit != null && notaToEdit.shippingCost > 0) notaToEdit.shippingCost.toString() else "") }
     var notes by remember { mutableStateOf(notaToEdit?.notes ?: "") }
 
-    val subtotal = items.sumOf {
-        val qty = it.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
-        val price = it.price.toLongOrNull() ?: 0L
-        (qty * price).toLong()
+    val subtotal by remember {
+        derivedStateOf {
+            items.sumOf {
+                val qty = it.quantity.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
+                val price = it.price.toLongOrNull() ?: 0L
+                (qty * price).toLong()
+            }
+        }
     }
 
-    val discVal = discount.toLongOrNull() ?: 0L
-    val shipVal = shippingCost.toLongOrNull() ?: 0L
-    val grandTotal = (subtotal - discVal + shipVal).coerceAtLeast(0L)
+    val discVal by remember { derivedStateOf { discount.toLongOrNull() ?: 0L } }
+    val shipVal by remember { derivedStateOf { shippingCost.toLongOrNull() ?: 0L } }
+    val grandTotal by remember { derivedStateOf { (subtotal - discVal + shipVal).coerceAtLeast(0L) } }
 
     val saveNotaAction = {
         if (customerName.isBlank()) {
@@ -445,6 +464,10 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                     if (deletedUnits.contains(sugg.unit.ifEmpty { "Pack" })) {
                         viewModel.restoreUnit(sugg.unit.ifEmpty { "Pack" })
                     }
+                },
+                onOpenProductPicker = { index ->
+                    activePickerItemIndex = index
+                    showProductPicker = true
                 },
                 onDeleteUnit = { viewModel.deleteUnit(it) },
                 onRestoreUnit = { viewModel.restoreUnit(it) }
@@ -654,5 +677,28 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 }
             }
         }
+    }
+
+    if (showProductPicker) {
+        ProductMasterScreen(
+            viewModel = viewModel,
+            onDismiss = { showProductPicker = false },
+            onSelectProduct = { selectedProduct ->
+                val idx = activePickerItemIndex ?: (items.size - 1)
+                if (idx in items.indices) {
+                    items = items.toMutableList().also {
+                        it[idx] = it[idx].copy(
+                            name = selectedProduct.name,
+                            unit = selectedProduct.unit.ifBlank { "Pcs" },
+                            price = if (selectedProduct.price > 0) selectedProduct.price.toString() else it[idx].price
+                        )
+                    }
+                    if (deletedUnits.contains(selectedProduct.unit.ifBlank { "Pcs" })) {
+                        viewModel.restoreUnit(selectedProduct.unit.ifBlank { "Pcs" })
+                    }
+                }
+                showProductPicker = false
+            }
+        )
     }
 }

@@ -5,13 +5,17 @@ Aplikasi kasir & manajemen nota transaksi Android berbasis **Kotlin** dan **Jetp
 ![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B%20(API%2024--34)-10B981?style=flat-square)
 ![Language](https://img.shields.io/badge/Kotlin-1.9.24-6366F1?style=flat-square)
 ![UI](https://img.shields.io/badge/UI-Jetpack%20Compose%20M3-3B82F6?style=flat-square)
-![Version](https://img.shields.io/badge/Version-v1.7.8-F59E0B?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.8.0-F59E0B?style=flat-square)
 
 ---
 
 ## Fitur Utama
 
-### 1. Pencatatan Nota & Manajemen Transaksi
+### 1. Master Database Produk & Pencatatan Transaksi Cepat
+- **Database Master Produk / Barang**: Simpan dan kelola katalog barang lengkap dengan harga jual standar, satuan (Pcs, Pack, Slop, Kg, dll.), kategori, dan kode/SKU.
+- **Pilih Produk & Auto-Fill**: Pemilihan barang langsung dari Master Produk dengan auto-fill nama, satuan, dan harga ke nota tanpa ketik ulang.
+- **Impor Cepat dari Riwayat**: Ekstrak seluruh produk yang pernah ditransaksikan ke dalam database produk dengan satu sentuhan.
+- **Pengetikan Responsif Bebas Lag**: Optimasi pengetikan nama pelanggan dan pencarian produk tanpa jeda keyboard.
 - **Buat & Edit Nota Cepat**: Mendukung banyak item dalam satu transaksi dengan jumlah, satuan custom/preset, dan harga per item.
 - **Perhitungan Lengkap**: Dukungan diskon, ongkos kirim, pajak, DP/titipan, catatan tambahan, dan nomor referensi otomatis (`INV-yyMMdd-XXX`).
 - **Autocomplete Cerdas & Kontak HP**: Rekomendasi otomatis pelanggan & produk dari transaksi sebelumnya, serta tombol **Ambil Kontak** untuk mengisi nama dan nomor telepon langsung dari daftar kontak perangkat.
@@ -136,4 +140,4 @@ Secara default workflow memakai `debug.keystore.base64` sebagai fallback agar bu
 
 ## Catatan Pembaruan (Changelog)
 
-Lihat riwayat lengkap perubahan dari rilis awal hingga versi terbaru (**v1.7.8**) di file [`changelog.md`](./changelog.md).
+Lihat riwayat lengkap perubahan dari rilis awal hingga versi terbaru (**v1.7.7**) di file [`changelog.md`](./changelog.md).

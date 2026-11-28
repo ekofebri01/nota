@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarViewMonth
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
@@ -61,6 +62,7 @@ import com.eco.nota.ui.screens.CreateNotaScreen
 import com.eco.nota.ui.screens.DetailNotaScreen
 import com.eco.nota.ui.screens.HomeScreen
 import com.eco.nota.ui.screens.NotaListScreen
+import com.eco.nota.ui.screens.ProductMasterScreen
 import com.eco.nota.ui.screens.SettingsScreen
 import com.eco.nota.ui.screens.SplashScreen
 import com.eco.nota.ui.theme.AccentRose
@@ -76,6 +78,7 @@ fun NotaApp(viewModel: NotaViewModel) {
     var showSplash by remember { mutableStateOf(true) }
     var selectedNota by remember { mutableStateOf<Nota?>(null) }
     var showCreateNota by remember { mutableStateOf(false) }
+    var showProductMaster by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var notaToEdit by remember { mutableStateOf<Nota?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
@@ -83,7 +86,7 @@ fun NotaApp(viewModel: NotaViewModel) {
     val notas by viewModel.notas.collectAsState()
 
     // Back handler for confirmation before exiting app on home screen
-    BackHandler(enabled = !showSettings && selectedNota == null && !showCreateNota && notaToEdit == null) {
+    BackHandler(enabled = !showSettings && selectedNota == null && !showCreateNota && notaToEdit == null && !showProductMaster) {
         showExitDialog = true
     }
 
@@ -147,6 +150,11 @@ fun NotaApp(viewModel: NotaViewModel) {
         return
     }
 
+    if (showProductMaster) {
+        ProductMasterScreen(viewModel = viewModel, onDismiss = { showProductMaster = false })
+        return
+    }
+
     if (notaToEdit != null) {
         CreateNotaScreen(
             viewModel = viewModel,
@@ -174,6 +182,7 @@ fun NotaApp(viewModel: NotaViewModel) {
                 topBar = {
                     MainAppBar(
                         title = "Nota Kasir",
+                        onProductsClicked = { showProductMaster = true },
                         onSettingsClicked = { showSettings = true }
                     )
                 }
@@ -218,7 +227,11 @@ fun NotaApp(viewModel: NotaViewModel) {
 }
 
 @Composable
-fun MainAppBar(title: String, onSettingsClicked: () -> Unit) {
+fun MainAppBar(
+    title: String,
+    onProductsClicked: () -> Unit = {},
+    onSettingsClicked: () -> Unit
+) {
     Surface(
         color = NotaTheme.colors.backgroundMain,
         modifier = Modifier.fillMaxWidth()
@@ -270,16 +283,33 @@ fun MainAppBar(title: String, onSettingsClicked: () -> Unit) {
                 }
             }
 
-            IconButton(
-                onClick = onSettingsClicked,
-                modifier = Modifier.size(48.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Pengaturan",
-                    tint = NotaTheme.colors.textPrimary,
-                    modifier = Modifier.size(22.dp)
-                )
+                IconButton(
+                    onClick = onProductsClicked,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Inventory2,
+                        contentDescription = "Master Produk",
+                        tint = Color(0xFFA5B4FC),
+                        modifier = Modifier.size(21.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = onSettingsClicked,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = "Pengaturan",
+                        tint = NotaTheme.colors.textPrimary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }

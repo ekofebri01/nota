@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import com.eco.nota.models.BusinessProfile
 import com.eco.nota.models.InvoiceConfig
 import com.eco.nota.models.Nota
+import com.eco.nota.models.Product
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -28,7 +29,8 @@ data class BackupContainer(
     val invoiceConfig: InvoiceConfig? = null,
     val notas: List<Nota> = emptyList(),
     val logoBase64: String? = null,
-    val qrisBase64: String? = null
+    val qrisBase64: String? = null,
+    val products: List<Product> = emptyList()
 )
 
 object BackupUtils {
@@ -57,6 +59,7 @@ object BackupUtils {
         notas: List<Nota>,
         businessProfile: BusinessProfile? = null,
         invoiceConfig: InvoiceConfig? = null,
+        products: List<Product> = emptyList(),
         showToast: Boolean = false
     ): String? {
         return try {
@@ -73,7 +76,8 @@ object BackupUtils {
                 invoiceConfig = invoiceConfig,
                 notas = notas,
                 logoBase64 = logoBase64,
-                qrisBase64 = qrisBase64
+                qrisBase64 = qrisBase64,
+                products = products
             )
             val jsonStr = jsonFormat.encodeToString(container)
 

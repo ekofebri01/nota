@@ -4,8 +4,12 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
-## [v1.7.8] — Pembaruan Aplikasi (2026-11-27)
-- build: downgrade Gradle to 8.11.1
+## [v1.8.0] — Database Master Produk & Optimasi Kecepatan Ketik (2026-11-27)
+- **Database Master Produk / Barang**: Menambahkan tabel lokal `products` di Room Database (versi 3, migrasi non-destruktif `MIGRATION_2_3`), lengkap dengan manajemen CRUD (tambah barang, edit harga/satuan/kategori/kode, dan hapus barang).
+- **Fitur Impor dari Riwayat Nota**: Fitur otomatis mengekstrak semua barang unik dari nota-nota sebelumnya langsung ke dalam Master Database Produk dengan satu klik.
+- **Pilih Produk Langsung**: Penambahan tombol `Pilih Master` pada form pembuatan nota untuk memilih barang langsung dari database produk dengan auto-fill nama, satuan, dan harga jual standar.
+- **Optimasi Kecepatan Mengetik (Bebas Lag)**: Memperbaiki penanganan `BringIntoViewRequester` dan isolasi recomposition menggunakan `derivedStateOf` pada kalkulasi total/subtotal, sehingga pengetikan nama pelanggan dan nama barang berjalan mulus tanpa jeda/stutter.
+- **Dukungan Backup & Restore**: Data master produk kini otomatis disertakan dalam file cadangan JSON dan file ZIP.
 
 ---
 
