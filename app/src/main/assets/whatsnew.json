@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.2",
+    "icon": "new_releases",
+    "title": "Pembaruan Aplikasi (v1.8.2)",
+    "description": "fix: backup via SAF, persempit izin storage dan FileProvider."
+  },
+  {
     "version": "1.8.1",
     "icon": "playlist_add",
     "title": "Auto-Add Produk Baru ke Database Master (v1.8.1)",

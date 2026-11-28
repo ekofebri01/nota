@@ -4,6 +4,11 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.8.2] — Pembaruan Aplikasi (2026-11-28)
+- fix: backup via SAF, persempit izin storage dan FileProvider
+
+---
+
 ## [v1.8.1] — Auto-Add Produk Baru ke Database Master (2026-11-27)
 - **Auto-Tambah Produk ke Database**: Saat Anda mengisi atau mengetik nama produk baru pada formulir pembuatan nota yang belum terdaftar di database, sistem kini secara otomatis menyimpan produk tersebut ke master database produk agar tersimpan permanen dan dapat digunakan kembali di masa mendatang.
 
