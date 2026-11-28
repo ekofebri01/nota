@@ -1,5 +1,6 @@
 package com.eco.nota.ui.screens
 
+import com.eco.nota.ui.theme.ambientGlow
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -135,6 +136,7 @@ fun ProductMasterScreen(
     }
 
     Scaffold(
+        modifier = Modifier.ambientGlow(),
         containerColor = ProBackground,
         topBar = {
             TopAppBar(
@@ -183,11 +185,11 @@ fun ProductMasterScreen(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 if (isImporting) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Color(0xFFA5B4FC))
+                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Color(0xFF7DE3FF))
                                 } else {
-                                    Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(15.dp))
+                                    Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(15.dp))
                                 }
-                                Text("Impor Nota", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFFA5B4FC))
+                                Text("Impor Nota", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFF7DE3FF))
                             }
                         }
                     }
@@ -306,7 +308,7 @@ fun ProductMasterScreen(
                         modifier = Modifier.fillMaxWidth(0.92f),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                        border = BorderStroke(1.dp, ProBorder)
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
@@ -322,7 +324,7 @@ fun ProductMasterScreen(
                                     Icon(
                                         Icons.Default.Inventory2,
                                         contentDescription = null,
-                                        tint = Color(0xFFA5B4FC),
+                                        tint = Color(0xFF7DE3FF),
                                         modifier = Modifier.size(32.dp)
                                     )
                                 }
@@ -373,9 +375,9 @@ fun ProductMasterScreen(
                                             border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.6f)),
                                             modifier = Modifier.fillMaxWidth().height(42.dp)
                                         ) {
-                                            Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
                                             Spacer(modifier = Modifier.width(6.dp))
-                                            Text("Impor dari Riwayat Nota", color = Color(0xFFA5B4FC), style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp))
+                                            Text("Impor dari Riwayat Nota", color = Color(0xFF7DE3FF), style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp))
                                         }
                                     }
                                 }
@@ -461,7 +463,7 @@ fun ProductMasterScreen(
             },
             dismissButton = {
                 TextButton(onClick = { productToDelete = null }) {
-                    Text("Batal", color = Color(0xFFA5B4FC), fontWeight = FontWeight.Bold)
+                    Text("Batal", color = Color(0xFF7DE3FF), fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = ProCardSurface,
@@ -484,7 +486,7 @@ private fun ProductItemCard(
             .clickable(onClick = onCardClick),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Row(
             modifier = Modifier
@@ -508,7 +510,7 @@ private fun ProductItemCard(
                         Icon(
                             Icons.Default.Sell,
                             contentDescription = null,
-                            tint = Color(0xFFA5B4FC),
+                            tint = Color(0xFF7DE3FF),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -551,7 +553,7 @@ private fun ProductItemCard(
                                 Text(
                                     text = product.category,
                                     style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold),
-                                    color = Color(0xFFA5B4FC),
+                                    color = Color(0xFF7DE3FF),
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
@@ -571,7 +573,7 @@ private fun ProductItemCard(
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "Edit",
-                        tint = Color(0xFFA5B4FC),
+                        tint = Color(0xFF7DE3FF),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -629,7 +631,7 @@ fun ProductFormDialog(
                 .padding(vertical = 20.dp),
             shape = RoundedCornerShape(20.dp),
             color = ProCardSurface,
-            border = BorderStroke(1.dp, ProBorder),
+            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
             shadowElevation = 16.dp
         ) {
             Column(
@@ -752,7 +754,7 @@ fun ProductFormDialog(
                                 Text(
                                     text = u,
                                     style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
-                                    color = if (isSelected) Color(0xFFA5B4FC) else TextGray,
+                                    color = if (isSelected) Color(0xFF7DE3FF) else TextGray,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -833,7 +835,7 @@ fun ProductFormDialog(
                                     Text(
                                         text = c,
                                         style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
-                                        color = if (isSelected) Color(0xFFA5B4FC) else TextGray,
+                                        color = if (isSelected) Color(0xFF7DE3FF) else TextGray,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
                                 }
@@ -852,7 +854,7 @@ fun ProductFormDialog(
                     OutlinedButton(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, ProBorder),
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                         modifier = Modifier.weight(1f).height(44.dp)
                     ) {
                         Text("Batal", color = TextGray, style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold))

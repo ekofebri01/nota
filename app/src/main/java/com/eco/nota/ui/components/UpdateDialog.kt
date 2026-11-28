@@ -200,7 +200,7 @@ fun UpdateAvailableDialog(
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = ProCardSurfaceLight,
-                        border = BorderStroke(1.dp, ProBorder)
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                     ) {
                         Text(
                             text = "Versi Anda: ${updateInfo.currentVersion}",
@@ -230,7 +230,7 @@ fun UpdateAvailableDialog(
                         .heightIn(max = 180.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurfaceLight),
-                    border = BorderStroke(1.dp, ProBorder)
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                 ) {
                     Column(
                         modifier = Modifier
@@ -323,7 +323,7 @@ fun UpdateAvailableDialog(
                                             .height(10.dp)
                                             .clip(RoundedCornerShape(5.dp)),
                                         color = AccentEmerald,
-                                        trackColor = Color(0xFF1E293B)
+                                        trackColor = Color(0xFF141C33)
                                     )
                                 } else {
                                     LinearProgressIndicator(
@@ -332,7 +332,7 @@ fun UpdateAvailableDialog(
                                             .height(10.dp)
                                             .clip(RoundedCornerShape(5.dp)),
                                         color = AccentEmerald,
-                                        trackColor = Color(0xFF1E293B)
+                                        trackColor = Color(0xFF141C33)
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -354,7 +354,7 @@ fun UpdateAvailableDialog(
                             OutlinedButton(
                                 onClick = onHide,
                                 shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, ProBorder),
+                                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
@@ -544,7 +544,7 @@ fun UpdateAvailableDialog(
                             OutlinedButton(
                                 onClick = onHide,
                                 shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, ProBorder),
+                                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
@@ -638,7 +638,7 @@ fun UpdateAvailableDialog(
                                     onDismissAndCleanup()
                                 },
                                 shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, ProBorder),
+                                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(48.dp)
@@ -781,7 +781,7 @@ fun UpdateBannerCard(
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
                         color = AccentEmerald,
-                        trackColor = Color(0xFF1E293B)
+                        trackColor = Color(0xFF141C33)
                     )
                 } else {
                     LinearProgressIndicator(
@@ -790,7 +790,7 @@ fun UpdateBannerCard(
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
                         color = AccentEmerald,
-                        trackColor = Color(0xFF1E293B)
+                        trackColor = Color(0xFF141C33)
                     )
                 }
             }
@@ -816,7 +816,7 @@ fun GithubRepoDialog(
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(22.dp)),
             color = ProCardSurface,
-            border = BorderStroke(1.dp, ProBorder),
+            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
             shape = RoundedCornerShape(22.dp)
         ) {
             Column(

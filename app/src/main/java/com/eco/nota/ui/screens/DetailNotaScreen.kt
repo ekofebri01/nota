@@ -168,15 +168,15 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                                 Toast.makeText(context, "Nota #${nota.referenceCode} diubah jadi TAGIHAN", Toast.LENGTH_SHORT).show()
                             },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (!isLunas) Color(0xFFEF4444).copy(alpha = 0.15f) else ProBackground,
-                        border = BorderStroke(1.5.dp, if (!isLunas) Color(0xFFEF4444) else ProBorder)
+                        color = if (!isLunas) Color(0xFFFF4D6D).copy(alpha = 0.15f) else ProBackground,
+                        border = BorderStroke(1.5.dp, if (!isLunas) Color(0xFFFF4D6D) else ProBorder)
                     ) {
                         Row(
                             modifier = Modifier.padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFFFF4D6D), modifier = Modifier.size(24.dp))
                             Column {
                                 Text("TAGIHAN (Belum Lunas)", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold), color = Color.White)
                                 Text("Menunggu pembayaran pelanggan", style = NotaTheme.typography.label.copy(fontSize = 11.sp), color = TextGray)
@@ -187,7 +187,7 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
             },
             confirmButton = {
                 TextButton(onClick = { showStatusDialog = false }) {
-                    Text("Tutup", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                    Text("Tutup", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
                 }
             },
             containerColor = ProCardSurface,
@@ -240,7 +240,7 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
             bottomBar = {
                 Surface(
                     color = ProCardSurface,
-                    border = BorderStroke(1.dp, ProBorder),
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -290,7 +290,7 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                                     }
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3862)),
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier.weight(1f).height(48.dp)
                         ) {
@@ -317,7 +317,7 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = ProCardSurface,
-                    border = BorderStroke(1.dp, ProBorder),
+                    border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -363,9 +363,9 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isLunas) Color(0xFF064E3B).copy(alpha = 0.35f) else Color(0xFF1E293B)
+                        containerColor = if (isLunas) Color(0xFF064E3B).copy(alpha = 0.35f) else Color(0xFF141C33)
                     ),
-                    border = BorderStroke(1.dp, if (isLunas) AccentEmerald.copy(alpha = 0.4f) else Color(0xFFEF4444).copy(alpha = 0.6f))
+                    border = BorderStroke(1.dp, if (isLunas) AccentEmerald.copy(alpha = 0.4f) else Color(0xFFFF4D6D).copy(alpha = 0.6f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -381,7 +381,7 @@ fun DetailNotaScreen(nota: Nota, viewModel: NotaViewModel, onDismiss: () -> Unit
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = if (isLunas) AccentEmerald.copy(alpha = 0.2f) else Color(0xFFEF4444).copy(alpha = 0.2f),
+                                color = if (isLunas) AccentEmerald.copy(alpha = 0.2f) else Color(0xFFFF4D6D).copy(alpha = 0.2f),
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -928,13 +928,13 @@ fun ExecutiveDarkReceiptView(
     onStatusClick: () -> Unit = {}
 ) {
     val isLunas = nota.status.equals("Lunas", ignoreCase = true)
-    val statusColor = if (isLunas) AccentEmerald else Color(0xFFF59E0B)
+    val statusColor = if (isLunas) AccentEmerald else Color(0xFFFFB020)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Column(
             modifier = Modifier
@@ -1073,7 +1073,7 @@ fun ExecutiveDarkReceiptView(
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFF1E293B),
+                        color = Color(0xFF141C33),
                         border = BorderStroke(1.dp, Color(0xFF3B82F6)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -1106,7 +1106,7 @@ fun ExecutiveDarkReceiptView(
                 Surface(
                     modifier = Modifier.clickable { onStatusClick() },
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF59E0B).copy(alpha = 0.15f)
+                    color = Color(0xFFFFB020).copy(alpha = 0.15f)
                 ) {
                     Text(
                         "👉 Ketuk stempel untuk ubah jadi LUNAS",
@@ -1146,7 +1146,7 @@ fun DynamicPaymentSection(nota: Nota, businessProfile: BusinessProfile, isDark: 
     val mutedColor = if (isDark) TextGray else Color(0xFF64748B)
     val cardBg = if (isDark) ProBackground.copy(alpha = 0.6f) else Color(0xFFF8FAFC)
     val cardBorder = if (isDark) ProBorder else Color(0xFFE2E8F0)
-    val primaryAccent = if (isDark) Color(0xFF818CF8) else Color(0xFF1E3A8A)
+    val primaryAccent = if (isDark) Color(0xFF6C8CFF) else Color(0xFF1E3A8A)
 
     when {
         nota.paymentMethod.equals("Transfer", ignoreCase = true) -> {
@@ -1197,8 +1197,8 @@ fun DynamicPaymentSection(nota: Nota, businessProfile: BusinessProfile, isDark: 
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    color = if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC),
-                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0))
+                    color = if (isDark) Color(0xFF141C33) else Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF2A3862) else Color(0xFFE2E8F0))
                 ) {
                     Row(
                         modifier = Modifier
@@ -1266,7 +1266,7 @@ fun DynamicPaymentSection(nota: Nota, businessProfile: BusinessProfile, isDark: 
                             }
                             Text(
                                 "SCAN QRIS DI ATAS UNTUK PEMBAYARAN",
-                                style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF0F172A)),
+                                style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFF7DE3FF) else Color(0xFF0F172A)),
                                 textAlign = TextAlign.Center
                             )
                         } else {

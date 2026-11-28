@@ -1,5 +1,6 @@
 package com.eco.nota.ui.screens
 
+import com.eco.nota.ui.theme.ambientGlow
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -310,6 +311,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
     }
 
     Scaffold(
+        modifier = Modifier.ambientGlow(),
         containerColor = ProBackground,
         topBar = {
             TopAppBar(
@@ -333,8 +335,8 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
-                            Text("Preview Struk", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp), color = Color(0xFFA5B4FC))
+                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Preview Struk", tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
+                            Text("Preview Struk", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp), color = Color(0xFF7DE3FF))
                         }
                     }
                 },
@@ -349,7 +351,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                     .navigationBarsPadding()
                     .imePadding(),
                 color = ProCardSurface,
-                border = BorderStroke(1.dp, ProBorder),
+                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient),
                 shadowElevation = 8.dp
             ) {
                 Row(
@@ -361,7 +363,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
                             Text(
                                 "TOTAL BAYAR (${items.size} Item)",
                                 style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
@@ -478,7 +480,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                border = BorderStroke(1.dp, ProBorder)
+                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -567,7 +569,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-                border = BorderStroke(1.dp, ProBorder)
+                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
             ) {
                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -621,6 +623,7 @@ fun CreateNotaScreen(viewModel: NotaViewModel, notaToEdit: Nota? = null, onDismi
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Scaffold(
+                modifier = Modifier.ambientGlow(),
                 containerColor = ProBackground,
                 topBar = {
                     TopAppBar(

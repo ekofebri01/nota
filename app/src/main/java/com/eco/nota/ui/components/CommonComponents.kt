@@ -83,7 +83,7 @@ fun SettingsItem(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = ProCardSurfaceLight,
-        border = androidx.compose.foundation.BorderStroke(1.dp, ProBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

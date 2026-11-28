@@ -1,5 +1,6 @@
 package com.eco.nota.ui.screens
 
+import com.eco.nota.ui.theme.neonGlow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -258,7 +259,9 @@ fun HomeScreen(
                 containerColor = AccentBlue,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.testTag("create_nota_fab")
+                modifier = Modifier
+                    .neonGlow(AccentBlue, RoundedCornerShape(16.dp))
+                    .testTag("create_nota_fab")
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -1057,7 +1060,7 @@ fun NotaItemCard(
                             .testTag("nota_card_menu_button_${nota.id}"),
                         shape = RoundedCornerShape(8.dp),
                         color = ProCardSurfaceLight.copy(alpha = 0.85f),
-                        border = BorderStroke(1.dp, ProBorder)
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

@@ -160,7 +160,7 @@ fun DateSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -206,7 +206,7 @@ fun DateSection(
                         Icon(
                             Icons.Default.EditCalendar,
                             contentDescription = "Pilih Kalender",
-                            tint = Color(0xFFA5B4FC),
+                            tint = Color(0xFF7DE3FF),
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
@@ -215,7 +215,7 @@ fun DateSection(
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = Color(0xFFA5B4FC)
+                            color = Color(0xFF7DE3FF)
                         )
                     }
                 }
@@ -228,7 +228,7 @@ fun DateSection(
                     .clickable { openDatePicker() },
                 shape = RoundedCornerShape(12.dp),
                 color = ProCardSurfaceLight,
-                border = BorderStroke(1.dp, ProBorder)
+                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -303,7 +303,7 @@ fun DateSection(
                             fontSize = 11.5.sp,
                             fontWeight = if (isYesterday) FontWeight.Bold else FontWeight.Medium
                         ),
-                        color = if (isYesterday) Color(0xFFA5B4FC) else TextGray
+                        color = if (isYesterday) Color(0xFF7DE3FF) else TextGray
                     )
                 }
             }
@@ -339,8 +339,8 @@ fun DateSection(
 
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFF10B981).copy(alpha = 0.18f),
-                        border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f))
+                        color = Color(0xFF10C48C).copy(alpha = 0.18f),
+                        border = BorderStroke(1.dp, Color(0xFF10C48C).copy(alpha = 0.4f))
                     ) {
                         Text(
                             "AUTO INV",
@@ -348,7 +348,7 @@ fun DateSection(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = Color(0xFF10B981),
+                            color = Color(0xFF10C48C),
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -402,7 +402,7 @@ fun BuyerInfoSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -429,8 +429,8 @@ fun BuyerInfoSection(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Icon(Icons.Default.Phone, contentDescription = "Pilih dari Kontak", tint = Color(0xFFA5B4FC), modifier = Modifier.size(14.dp))
-                        Text("Ambil Kontak", style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                        Icon(Icons.Default.Phone, contentDescription = "Pilih dari Kontak", tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
+                        Text("Ambil Kontak", style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
                     }
                 }
             }
@@ -458,7 +458,7 @@ fun BuyerInfoSection(
                             .heightIn(max = 180.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = ProCardSurfaceLight),
-                        border = BorderStroke(1.dp, ProBorder)
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                     ) {
                         Column(
                             modifier = Modifier
@@ -476,7 +476,7 @@ fun BuyerInfoSection(
                                 Text(
                                     "RIWAYAT PELANGGAN (${filteredSuggestions.size})",
                                     style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold),
-                                    color = Color(0xFFA5B4FC)
+                                    color = Color(0xFF7DE3FF)
                                 )
                                 Text(
                                     "Bisa di-scroll ↕",
@@ -575,7 +575,7 @@ fun ItemsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = ProCardSurface),
-        border = BorderStroke(1.dp, ProBorder)
+        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -608,16 +608,16 @@ fun ItemsSection(
                                 }
                             },
                             shape = RoundedCornerShape(10.dp),
-                            color = Color(0xFFA5B4FC).copy(alpha = 0.18f),
-                            border = BorderStroke(1.dp, Color(0xFFA5B4FC).copy(alpha = 0.4f))
+                            color = Color(0xFF7DE3FF).copy(alpha = 0.18f),
+                            border = BorderStroke(1.dp, Color(0xFF7DE3FF).copy(alpha = 0.4f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(14.dp))
-                                Text("Pilih Master", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFFA5B4FC))
+                                Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(14.dp))
+                                Text("Pilih Master", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold, fontSize = 11.5.sp), color = Color(0xFF7DE3FF))
                             }
                         }
                     }
@@ -636,8 +636,8 @@ fun ItemsSection(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
-                            Text("Tambah", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
+                            Text("Tambah", style = NotaTheme.typography.label.copy(fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
                         }
                     }
                 }
@@ -660,7 +660,7 @@ fun ItemsSection(
                             .clickable { editingIndex = index },
                         shape = RoundedCornerShape(14.dp),
                         color = ProCardSurfaceLight,
-                        border = BorderStroke(1.dp, ProBorder)
+                        border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                     ) {
                         Row(
                             modifier = Modifier
@@ -681,7 +681,7 @@ fun ItemsSection(
                                     Text(
                                         "#${index + 1}",
                                         style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                                        color = Color(0xFFA5B4FC),
+                                        color = Color(0xFF7DE3FF),
                                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                                     )
                                 }
@@ -714,7 +714,7 @@ fun ItemsSection(
                                     onClick = { editingIndex = index },
                                     modifier = Modifier.size(30.dp)
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit Item", tint = Color(0xFFA5B4FC), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit Item", tint = Color(0xFF7DE3FF), modifier = Modifier.size(16.dp))
                                 }
 
                                 if (items.size > 1) {
@@ -780,7 +780,7 @@ fun ItemsSection(
                                         Text(
                                             "MENGISI ITEM #${index + 1}",
                                             style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                                            color = Color(0xFFA5B4FC),
+                                            color = Color(0xFF7DE3FF),
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                         )
                                     }
@@ -789,16 +789,16 @@ fun ItemsSection(
                                         Surface(
                                             modifier = Modifier.clickable { onOpenProductPicker(index) },
                                             shape = RoundedCornerShape(8.dp),
-                                            color = Color(0xFFA5B4FC).copy(alpha = 0.16f),
-                                            border = BorderStroke(1.dp, Color(0xFFA5B4FC).copy(alpha = 0.35f))
+                                            color = Color(0xFF7DE3FF).copy(alpha = 0.16f),
+                                            border = BorderStroke(1.dp, Color(0xFF7DE3FF).copy(alpha = 0.35f))
                                         ) {
                                             Row(
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                                             ) {
-                                                Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(13.dp))
-                                                Text("Pilih Master", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                                                Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(13.dp))
+                                                Text("Pilih Master", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
                                             }
                                         }
                                     }
@@ -897,7 +897,7 @@ fun ItemsSection(
                                                 Text(
                                                     "PILIHAN PRODUK (${filteredProdSuggestions.size})",
                                                     style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                                                    color = Color(0xFFA5B4FC)
+                                                    color = Color(0xFF7DE3FF)
                                                 )
                                                 Text(
                                                     "Bisa di-scroll ↕",
@@ -972,7 +972,7 @@ fun ItemsSection(
                                                 },
                                             shape = RoundedCornerShape(8.dp),
                                             color = ProCardSurface,
-                                            border = BorderStroke(1.dp, ProBorder)
+                                            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
                                                 Icon(Icons.Default.Remove, contentDescription = "Kurang", tint = Color.White, modifier = Modifier.size(14.dp))
@@ -997,7 +997,7 @@ fun ItemsSection(
                                                 },
                                             shape = RoundedCornerShape(8.dp),
                                             color = ProCardSurface,
-                                            border = BorderStroke(1.dp, ProBorder)
+                                            border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
                                                 Icon(Icons.Default.Add, contentDescription = "Tambah", tint = Color.White, modifier = Modifier.size(14.dp))
@@ -1052,7 +1052,7 @@ fun ItemsSection(
                                             OutlinedButton(
                                                 onClick = { unitToDelete = null },
                                                 shape = RoundedCornerShape(8.dp),
-                                                border = BorderStroke(1.dp, ProBorder)
+                                                border = BorderStroke(1.dp, com.eco.nota.ui.theme.CardBorderGradient)
                                             ) {
                                                 Text("Batal", style = NotaTheme.typography.label.copy(color = TextGray))
                                             }
@@ -1078,7 +1078,7 @@ fun ItemsSection(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Text("Terpilih: ${item.unit}", style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), color = Color(0xFFA5B4FC))
+                                            Text("Terpilih: ${item.unit}", style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold), color = Color(0xFF7DE3FF))
                                             if (displayedUnits.contains(item.unit)) {
                                                 Surface(
                                                     modifier = Modifier.clickable { unitToDelete = item.unit },
@@ -1200,9 +1200,9 @@ fun ItemsSection(
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = AccentBlue.copy(alpha = 0.1f)),
                 modifier = Modifier.fillMaxWidth().height(46.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFFA5B4FC), modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF7DE3FF), modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("+ Tambah Barang Baru", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp), color = Color(0xFFA5B4FC))
+                Text("+ Tambah Barang Baru", style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp), color = Color(0xFF7DE3FF))
             }
         }
     }

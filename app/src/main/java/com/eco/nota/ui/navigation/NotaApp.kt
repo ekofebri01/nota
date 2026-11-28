@@ -1,5 +1,7 @@
 package com.eco.nota.ui.navigation
 
+import com.eco.nota.ui.theme.bottomGlowLine
+import com.eco.nota.ui.theme.ambientGlow
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -124,7 +126,7 @@ fun NotaApp(viewModel: NotaViewModel) {
                     Text(
                         text = "Batal",
                         style = NotaTheme.typography.body.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFFA5B4FC)
+                        color = Color(0xFF7DE3FF)
                     )
                 }
             },
@@ -178,6 +180,7 @@ fun NotaApp(viewModel: NotaViewModel) {
             )
         } else {
             Scaffold(
+                modifier = Modifier.ambientGlow(),
                 containerColor = NotaTheme.colors.backgroundMain,
                 topBar = {
                     MainAppBar(
@@ -234,7 +237,7 @@ fun MainAppBar(
 ) {
     Surface(
         color = NotaTheme.colors.backgroundMain,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().bottomGlowLine()
     ) {
         Row(
             modifier = Modifier
@@ -251,15 +254,15 @@ fun MainAppBar(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF6366F1).copy(alpha = 0.2f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.4f)),
+                    color = Color(0xFF4C6FFF).copy(alpha = 0.2f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4C6FFF).copy(alpha = 0.4f)),
                     modifier = Modifier.size(30.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ReceiptLong,
                             contentDescription = null,
-                            tint = Color(0xFFA5B4FC),
+                            tint = Color(0xFF7DE3FF),
                             modifier = Modifier.size(17.dp)
                         )
                     }
@@ -272,12 +275,12 @@ fun MainAppBar(
                 )
                 Surface(
                     shape = RoundedCornerShape(5.dp),
-                    color = Color(0xFF10B981).copy(alpha = 0.2f)
+                    color = Color(0xFF10C48C).copy(alpha = 0.2f)
                 ) {
                     Text(
                         "PRO",
                         style = NotaTheme.typography.label.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                        color = Color(0xFF10B981),
+                        color = Color(0xFF10C48C),
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                     )
                 }
@@ -294,7 +297,7 @@ fun MainAppBar(
                     Icon(
                         Icons.Default.Inventory2,
                         contentDescription = "Master Produk",
-                        tint = Color(0xFFA5B4FC),
+                        tint = Color(0xFF7DE3FF),
                         modifier = Modifier.size(21.dp)
                     )
                 }

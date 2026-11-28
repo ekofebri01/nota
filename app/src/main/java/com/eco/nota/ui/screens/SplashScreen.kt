@@ -1,6 +1,11 @@
 package com.eco.nota.ui.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,12 +29,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eco.nota.ui.theme.AccentBlue
+import com.eco.nota.ui.theme.AccentCyan
+import com.eco.nota.ui.theme.AccentCyanSoft
+import com.eco.nota.ui.theme.AccentPurple
+import com.eco.nota.ui.theme.ambientGlow
+import com.eco.nota.ui.theme.neonGlow
 import com.eco.nota.ui.theme.NotaTheme
 import com.eco.nota.ui.theme.PrimaryGradient
 import com.eco.nota.ui.theme.ProBackground
@@ -44,6 +58,14 @@ fun SplashScreen(onTimeout: () -> Unit) {
         label = "splashScale"
     )
 
+    val ringTransition = rememberInfiniteTransition(label = "splashRing")
+    val ringAngle by ringTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 1800, easing = LinearEasing), RepeatMode.Restart),
+        label = "splashRingAngle"
+    )
+
     LaunchedEffect(key1 = true) {
         startAnimation = true
         delay(1500)
@@ -53,16 +75,34 @@ fun SplashScreen(onTimeout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ProBackground),
+            .background(ProBackground)
+            .ambientGlow(),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.scale(scaleAnim)
         ) {
+            Box(
+                modifier = Modifier
+                    .size(124.dp)
+                    .drawBehind {
+                        rotate(ringAngle) {
+                            drawCircle(
+                                brush = Brush.sweepGradient(
+                                    listOf(Color.Transparent, AccentCyan, AccentPurple, Color.Transparent)
+                                ),
+                                style = Stroke(width = 3.dp.toPx())
+                            )
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
             Surface(
                 shape = CircleShape,
-                modifier = Modifier.size(100.dp),
+                modifier = Modifier
+                    .size(100.dp)
+                    .neonGlow(AccentCyan, CircleShape, 22.dp),
                 color = AccentBlue.copy(alpha = 0.2f),
                 border = androidx.compose.foundation.BorderStroke(2.dp, AccentBlue)
             ) {
@@ -70,16 +110,21 @@ fun SplashScreen(onTimeout: () -> Unit) {
                     Icon(
                         Icons.AutoMirrored.Filled.ReceiptLong,
                         contentDescription = null,
-                        tint = Color(0xFFA5B4FC),
+                        tint = AccentCyanSoft,
                         modifier = Modifier.size(50.dp)
                     )
                 }
             }
+            }
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 "NOTA KASIR PRO",
-                style = NotaTheme.typography.title.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp),
-                color = Color.White
+                style = NotaTheme.typography.title.copy(
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 3.sp,
+                    brush = com.eco.nota.ui.theme.PrimaryGradient
+                )
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(

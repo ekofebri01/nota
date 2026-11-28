@@ -43,8 +43,23 @@ fun NotaTheme(
         MaterialTheme(
             colorScheme = darkColorScheme(
                 primary = AccentBlue,
+                onPrimary = Color.White,
+                secondary = AccentPurple,
+                tertiary = AccentCyan,
                 background = ProBackground,
-                surface = ProCardSurface
+                onBackground = TextPrimary,
+                surface = ProCardSurface,
+                onSurface = TextPrimary,
+                surfaceVariant = ProCardSurfaceLight,
+                onSurfaceVariant = TextGray,
+                outline = ProBorder,
+                outlineVariant = ProBorder,
+                error = AccentRose,
+                surfaceContainerLowest = ProBackground,
+                surfaceContainerLow = ProCardSurface,
+                surfaceContainer = ProCardSurface,
+                surfaceContainerHigh = ProCardSurfaceLight,
+                surfaceContainerHighest = ProCardSurfaceLight
             ),
             content = content
         )
