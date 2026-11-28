@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.1",
+    "icon": "playlist_add",
+    "title": "Auto-Add Produk Baru ke Database Master (v1.8.1)",
+    "description": "Saat Anda mengetik atau memasukkan nama produk baru yang belum ada di database saat membuat nota, sistem secara otomatis menambahkannya ke master database produk agar tersimpan permanen."
+  },
+  {
     "version": "1.8.0",
     "icon": "search",
     "title": "Database Master Produk & Ketik Cepat Tanpa Lag (v1.8.0)",

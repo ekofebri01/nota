@@ -13,8 +13,8 @@ android {
         applicationId = "com.eco.nota"
         minSdk = 24
         targetSdk = 34
-        versionCode = 22
-        versionName = "1.8.0"
+        versionCode = 23
+        versionName = "1.8.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

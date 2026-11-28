@@ -4,6 +4,11 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.8.1] — Auto-Add Produk Baru ke Database Master (2026-11-27)
+- **Auto-Tambah Produk ke Database**: Saat Anda mengisi atau mengetik nama produk baru pada formulir pembuatan nota yang belum terdaftar di database, sistem kini secara otomatis menyimpan produk tersebut ke master database produk agar tersimpan permanen dan dapat digunakan kembali di masa mendatang.
+
+---
+
 ## [v1.8.0] — Database Master Produk & Optimasi Kecepatan Ketik (2026-11-27)
 - **Database Master Produk / Barang**: Menambahkan tabel lokal `products` di Room Database (versi 3, migrasi non-destruktif `MIGRATION_2_3`), lengkap dengan manajemen CRUD (tambah barang, edit harga/satuan/kategori/kode, dan hapus barang).
 - **Fitur Impor dari Riwayat Nota**: Fitur otomatis mengekstrak semua barang unik dari nota-nota sebelumnya langsung ke dalam Master Database Produk dengan satu klik.

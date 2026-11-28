@@ -44,6 +44,16 @@ data class Product(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+@Serializable
+data class Customer(
+    val id: String = "",
+    val name: String = "",
+    val phoneNumber: String = "",
+    val address: String = "",
+    val label: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
 data class CustomerSuggestion(
     val name: String,
     val phoneNumber: String = "",

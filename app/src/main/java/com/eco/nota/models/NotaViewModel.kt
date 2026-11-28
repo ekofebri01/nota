@@ -117,10 +117,42 @@ interface ProductDao {
     suspend fun deleteAll()
 }
 
-@Database(entities = [NotaEntity::class, ProductEntity::class], version = 3, exportSchema = false)
+@Entity(tableName = "customers")
+data class CustomerEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val phoneNumber: String = "",
+    val address: String = "",
+    val label: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface CustomerDao {
+    @Query("SELECT * FROM customers ORDER BY name COLLATE NOCASE ASC")
+    fun getAllCustomers(): kotlinx.coroutines.flow.Flow<List<CustomerEntity>>
+
+    @Query("SELECT * FROM customers ORDER BY name COLLATE NOCASE ASC")
+    suspend fun getAllCustomersDirect(): List<CustomerEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomer(customer: CustomerEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCustomers(customers: List<CustomerEntity>)
+
+    @Query("DELETE FROM customers WHERE id = :id")
+    suspend fun deleteCustomer(id: String)
+
+    @Query("DELETE FROM customers")
+    suspend fun deleteAll()
+}
+
+@Database(entities = [NotaEntity::class, ProductEntity::class, CustomerEntity::class], version = 4, exportSchema = false)
 abstract class NotaDatabase : RoomDatabase() {
     abstract fun notaDao(): NotaDao
     abstract fun productDao(): ProductDao
+    abstract fun customerDao(): CustomerDao
 
     companion object {
         @Volatile
@@ -148,13 +180,28 @@ abstract class NotaDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS customers (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        phoneNumber TEXT NOT NULL DEFAULT '',
+                        address TEXT NOT NULL DEFAULT '',
+                        label TEXT NOT NULL DEFAULT '',
+                        createdAt INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getDatabase(context: Context): NotaDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     NotaDatabase::class.java,
                     "nota_database"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
                 INSTANCE = instance
                 instance
             }
@@ -165,6 +212,7 @@ abstract class NotaDatabase : RoomDatabase() {
 class NotaViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = NotaDatabase.getDatabase(application).notaDao()
     private val productDao = NotaDatabase.getDatabase(application).productDao()
+    private val customerDao = NotaDatabase.getDatabase(application).customerDao()
     private val prefs = application.getSharedPreferences("nota_pro_prefs", Context.MODE_PRIVATE)
     private val jsonFormat = Json { ignoreUnknownKeys = true }
 
@@ -178,6 +226,21 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     unit = entity.unit,
                     category = entity.category,
                     code = entity.code,
+                    createdAt = entity.createdAt
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val customers: StateFlow<List<Customer>> = customerDao.getAllCustomers()
+        .map { entities ->
+            entities.map { entity ->
+                Customer(
+                    id = entity.id,
+                    name = entity.name,
+                    phoneNumber = entity.phoneNumber,
+                    address = entity.address,
+                    label = entity.label,
                     createdAt = entity.createdAt
                 )
             }
@@ -464,6 +527,63 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 isPickedUp = nota.isPickedUp
             )
             dao.insertNota(entity)
+
+            // Auto-add products that don't exist yet in master product database
+            withContext(Dispatchers.IO) {
+                try {
+                    val existingProducts = productDao.getAllProductsDirect()
+                    nota.items.forEach { item ->
+                        val cleanName = item.name.trim()
+                        if (cleanName.isNotBlank()) {
+                            val exists = existingProducts.any { it.name.equals(cleanName, ignoreCase = true) }
+                            if (!exists) {
+                                val priceVal = item.price.trim().replace(".", "").replace(",", "").toLongOrNull() ?: 0L
+                                val unitVal = item.unit.trim().ifBlank { "Pcs" }
+                                val prodId = "PROD_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
+                                val code = "PRD-${cleanName.take(3).uppercase()}-${System.currentTimeMillis().toString().takeLast(3)}"
+                                val productEntity = ProductEntity(
+                                    id = prodId,
+                                    name = cleanName,
+                                    price = priceVal,
+                                    unit = unitVal,
+                                    category = "Umum",
+                                    code = code,
+                                    createdAt = System.currentTimeMillis()
+                                )
+                                productDao.insertProduct(productEntity)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // ignore
+                }
+            }
+
+            // Auto-add customer if not exists yet in customer database
+            withContext(Dispatchers.IO) {
+                try {
+                    val cleanCustomerName = nota.customerName.trim()
+                    if (cleanCustomerName.isNotBlank() && cleanCustomerName.lowercase() != "umum" && cleanCustomerName.lowercase() != "pelanggan umum") {
+                        val existingCustomers = customerDao.getAllCustomersDirect()
+                        val custExists = existingCustomers.any { it.name.equals(cleanCustomerName, ignoreCase = true) }
+                        if (!custExists) {
+                            val custId = "CUST_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
+                            val customerEntity = CustomerEntity(
+                                id = custId,
+                                name = cleanCustomerName,
+                                phoneNumber = nota.phoneNumber.trim(),
+                                address = nota.address.trim(),
+                                label = "Pelanggan Nota",
+                                createdAt = System.currentTimeMillis()
+                            )
+                            customerDao.insertCustomer(customerEntity)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // ignore
+                }
+            }
+
             performAutoBackup(showToast = true)
         }
     }
@@ -568,26 +688,81 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun saveProduct(product: Product) {
+    fun saveProduct(product: Product, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
         viewModelScope.launch(Dispatchers.IO) {
+            val cleanName = product.name.trim()
+            if (cleanName.isBlank()) {
+                withContext(Dispatchers.Main) { onResult(false, "Nama produk tidak boleh kosong") }
+                return@launch
+            }
+            val existing = productDao.getAllProductsDirect()
+            val duplicate = existing.find { it.name.equals(cleanName, ignoreCase = true) && it.id != product.id }
+            if (duplicate != null) {
+                withContext(Dispatchers.Main) { onResult(false, "Produk dengan nama '$cleanName' sudah ada di database!") }
+                return@launch
+            }
+
             val id = if (product.id.isBlank()) "PROD_${System.currentTimeMillis()}" else product.id
+            val finalCode = if (product.code.isNotBlank()) product.code.trim() else {
+                val catPrefix = if (product.category.isNotBlank()) product.category.take(3).uppercase() else "PRD"
+                val namePrefix = cleanName.take(3).uppercase()
+                "$catPrefix-$namePrefix-${System.currentTimeMillis().toString().takeLast(3)}"
+            }
+
             val entity = ProductEntity(
                 id = id,
-                name = product.name.trim(),
+                name = cleanName,
                 price = product.price,
                 unit = product.unit.trim().ifBlank { "Pcs" },
                 category = product.category.trim(),
-                code = product.code.trim(),
+                code = finalCode,
                 createdAt = if (product.createdAt > 0) product.createdAt else System.currentTimeMillis()
             )
             productDao.insertProduct(entity)
             performAutoBackup(showToast = false)
+            withContext(Dispatchers.Main) { onResult(true, "Berhasil menyimpan produk") }
         }
     }
 
     fun deleteProduct(productId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             productDao.deleteProduct(productId)
+            performAutoBackup(showToast = false)
+        }
+    }
+
+    fun saveCustomer(customer: Customer, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cleanName = customer.name.trim()
+            if (cleanName.isBlank()) {
+                withContext(Dispatchers.Main) { onResult(false, "Nama pelanggan tidak boleh kosong") }
+                return@launch
+            }
+            val existing = customerDao.getAllCustomersDirect()
+            val duplicate = existing.find { it.name.equals(cleanName, ignoreCase = true) && it.id != customer.id }
+            if (duplicate != null) {
+                withContext(Dispatchers.Main) { onResult(false, "Pelanggan dengan nama '$cleanName' sudah ada di database!") }
+                return@launch
+            }
+
+            val id = if (customer.id.isBlank()) "CUST_${System.currentTimeMillis()}" else customer.id
+            val entity = CustomerEntity(
+                id = id,
+                name = cleanName,
+                phoneNumber = customer.phoneNumber.trim(),
+                address = customer.address.trim(),
+                label = customer.label.trim(),
+                createdAt = if (customer.createdAt > 0) customer.createdAt else System.currentTimeMillis()
+            )
+            customerDao.insertCustomer(entity)
+            performAutoBackup(showToast = false)
+            withContext(Dispatchers.Main) { onResult(true, "Berhasil menyimpan pelanggan") }
+        }
+    }
+
+    fun deleteCustomer(customerId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            customerDao.deleteCustomer(customerId)
             performAutoBackup(showToast = false)
         }
     }
@@ -756,6 +931,18 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     )
                     productDao.insertProduct(prodEntity)
                 }
+                for (cust in container.customers) {
+                    val custId = cust.id.ifBlank { "CUST_${System.currentTimeMillis()}" }
+                    val custEntity = CustomerEntity(
+                        id = custId,
+                        name = cust.name,
+                        phoneNumber = cust.phoneNumber,
+                        address = cust.address,
+                        label = cust.label,
+                        createdAt = if (cust.createdAt > 0) cust.createdAt else System.currentTimeMillis()
+                    )
+                    customerDao.insertCustomer(custEntity)
+                }
                 performAutoBackup(showToast = false)
                 onSuccess()
             } catch (e: Exception) {
@@ -809,11 +996,24 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
+            val customerEntities = customerDao.getAllCustomersDirect()
+            val customerList = customerEntities.map {
+                Customer(
+                    id = it.id,
+                    name = it.name,
+                    phoneNumber = it.phoneNumber,
+                    address = it.address,
+                    label = it.label,
+                    createdAt = it.createdAt
+                )
+            }
+
             val container = BackupContainer(
                 businessProfile = _businessProfile.value,
                 invoiceConfig = _invoiceConfig.value,
                 notas = fullNotasList,
-                products = productList
+                products = productList,
+                customers = customerList
             )
             val prettyJson = Json { prettyPrint = true; ignoreUnknownKeys = true }.encodeToString(container)
 
@@ -827,6 +1027,7 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                     businessProfile = _businessProfile.value,
                     invoiceConfig = _invoiceConfig.value,
                     products = productList,
+                    customers = customerList,
                     showToast = false
                 )
             } catch (e: Exception) { }
