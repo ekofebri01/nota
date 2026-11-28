@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.6",
+    "icon": "phone",
+    "title": "Auto-Simpan Kontak Pelanggan dari Nota (v1.8.6)",
+    "description": "Kontak pelanggan kini otomatis tersimpan ke Database Kontak saat membuat/mengedit nota jika belum ada. Tersedia juga tombol Impor Kontak dari riwayat nota lama serta auto-update nomor HP dan alamat."
+  },
+  {
     "version": "1.8.5",
     "icon": "star",
     "title": "Jendela Floating Buat Nota & Database (v1.8.5)",

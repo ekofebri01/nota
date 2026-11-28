@@ -4,6 +4,13 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.8.6] — Auto-Simpan Kontak Pelanggan dari Nota (2026-11-28)
+- **Auto-Simpan Kontak Pelanggan**: Setiap kali membuat atau mengedit nota transaksi, kontak pelanggan (nama, nomor telepon, dan alamat) otomatis tersimpan ke **Database Kontak Pelanggan** jika belum terdaftar.
+- **Pembaruan Otomatis Kontak Tersimpan**: Jika nama pelanggan sudah ada di database namun nomor HP atau alamatnya masih kosong dan di nota diisi, data kontak pelanggan tersebut otomatis dilengkapi.
+- **Sinkronisasi Otomatis & Tombol Impor dari Nota**: Saat aplikasi dibuka, seluruh kontak unik dari riwayat nota otomatis disinkronkan ke database pelanggan. Di jendela **Database Pelanggan** juga ditambahkan tombol cepat **Impor** untuk menarik kontak dari seluruh transaksi sebelumnya.
+
+---
+
 ## [v1.8.5] — Jendela Floating Buat Nota & Database (2026-11-28)
 - **Jendela Floating Buat & Edit Nota**: Formulir **Buat Nota Baru**, **Edit Nota**, dan **Preview Struk** kini tampil sebagai jendela melayang (*floating window*) modern berborder gradien dengan animasi spring halus di atas layar utama.
 - **Jendela Floating Database Produk & Pelanggan**: Menu **Database Master Produk** dan **Database Kontak Pelanggan** (termasuk saat dipilih sebagai picker di form buat nota maupun dibuka dari beranda atau pengaturan) kini hadir dengan desain *floating window* futuristik yang seragam.

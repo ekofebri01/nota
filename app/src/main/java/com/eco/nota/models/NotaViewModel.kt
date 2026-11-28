@@ -304,9 +304,9 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentAppVersion: String = try {
         val pInfo = application.packageManager.getPackageInfo(application.packageName, 0)
-        pInfo.versionName ?: "1.8.5"
+        pInfo.versionName ?: "1.8.6"
     } catch (e: Exception) {
-        "1.8.5"
+        "1.8.6"
     }
 
     private val _githubRepo = MutableStateFlow(
@@ -350,6 +350,12 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
             checkForUpdates(manual = false)
         }
         viewModelScope.launch(Dispatchers.IO) {
+            // Otomatis sinkronisasi kontak pelanggan dari riwayat nota ke database jika belum ada
+            try {
+                autoSyncCustomersFromNotasInternal()
+            } catch (e: Exception) {
+                // ignore
+            }
             // Perform auto backup check/initialization if DB has items
             val existing = dao.getAllNotasDirect()
             if (existing.isNotEmpty()) {
@@ -559,24 +565,35 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Auto-add customer if not exists yet in customer database
+            // Auto-add or update customer if not exists or incomplete in customer database
             withContext(Dispatchers.IO) {
                 try {
                     val cleanCustomerName = nota.customerName.trim()
-                    if (cleanCustomerName.isNotBlank() && cleanCustomerName.lowercase() != "umum" && cleanCustomerName.lowercase() != "pelanggan umum") {
+                    val isGeneric = cleanCustomerName.isBlank() || (cleanCustomerName.lowercase() in listOf("umum", "pelanggan umum") && nota.phoneNumber.isBlank() && nota.address.isBlank())
+                    if (!isGeneric) {
                         val existingCustomers = customerDao.getAllCustomersDirect()
-                        val custExists = existingCustomers.any { it.name.equals(cleanCustomerName, ignoreCase = true) }
-                        if (!custExists) {
+                        val existingCust = existingCustomers.find { it.name.equals(cleanCustomerName, ignoreCase = true) }
+                        if (existingCust == null) {
                             val custId = "CUST_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}"
                             val customerEntity = CustomerEntity(
                                 id = custId,
                                 name = cleanCustomerName,
                                 phoneNumber = nota.phoneNumber.trim(),
                                 address = nota.address.trim(),
-                                label = "Pelanggan Nota",
+                                label = nota.customerLabel.ifBlank { "Pelanggan Nota" },
                                 createdAt = System.currentTimeMillis()
                             )
                             customerDao.insertCustomer(customerEntity)
+                        } else {
+                            val shouldUpdatePhone = existingCust.phoneNumber.isBlank() && nota.phoneNumber.isNotBlank()
+                            val shouldUpdateAddress = existingCust.address.isBlank() && nota.address.isNotBlank()
+                            if (shouldUpdatePhone || shouldUpdateAddress) {
+                                val updatedCust = existingCust.copy(
+                                    phoneNumber = if (shouldUpdatePhone) nota.phoneNumber.trim() else existingCust.phoneNumber,
+                                    address = if (shouldUpdateAddress) nota.address.trim() else existingCust.address
+                                )
+                                customerDao.insertCustomer(updatedCust)
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -764,6 +781,60 @@ class NotaViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             customerDao.deleteCustomer(customerId)
             performAutoBackup(showToast = false)
+        }
+    }
+
+    private suspend fun autoSyncCustomersFromNotasInternal(): Pair<Int, Int> {
+        val currentNotas = dao.getAllNotasDirect()
+        val existingCustomers = customerDao.getAllCustomersDirect().toMutableList()
+        val newEntities = mutableListOf<CustomerEntity>()
+        var updatedCount = 0
+
+        currentNotas.forEach { entity ->
+            val cleanName = entity.customerName.trim()
+            val isGeneric = cleanName.isBlank() || (cleanName.lowercase() in listOf("umum", "pelanggan umum") && entity.phoneNumber.isBlank() && entity.address.isBlank())
+            if (!isGeneric) {
+                val existing = existingCustomers.find { it.name.equals(cleanName, ignoreCase = true) }
+                if (existing == null) {
+                    val newCust = CustomerEntity(
+                        id = "CUST_${System.currentTimeMillis()}_${newEntities.size}_${java.util.UUID.randomUUID().toString().take(4)}",
+                        name = cleanName,
+                        phoneNumber = entity.phoneNumber.trim(),
+                        address = entity.address.trim(),
+                        label = entity.customerLabel.ifBlank { "Pelanggan Nota" },
+                        createdAt = System.currentTimeMillis()
+                    )
+                    newEntities.add(newCust)
+                    existingCustomers.add(newCust)
+                } else if ((existing.phoneNumber.isBlank() && entity.phoneNumber.isNotBlank()) ||
+                           (existing.address.isBlank() && entity.address.isNotBlank())) {
+                    val updated = existing.copy(
+                        phoneNumber = if (existing.phoneNumber.isBlank()) entity.phoneNumber.trim() else existing.phoneNumber,
+                        address = if (existing.address.isBlank()) entity.address.trim() else existing.address
+                    )
+                    customerDao.insertCustomer(updated)
+                    existingCustomers.remove(existing)
+                    existingCustomers.add(updated)
+                    updatedCount++
+                }
+            }
+        }
+
+        if (newEntities.isNotEmpty()) {
+            customerDao.insertCustomers(newEntities)
+        }
+        return Pair(newEntities.size, updatedCount)
+    }
+
+    fun importCustomersFromNotas(onComplete: (Int) -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val (added, updated) = autoSyncCustomersFromNotasInternal()
+            if (added > 0 || updated > 0) {
+                performAutoBackup(showToast = false)
+            }
+            withContext(Dispatchers.Main) {
+                onComplete(added + updated)
+            }
         }
     }
 

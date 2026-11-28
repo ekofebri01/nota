@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -100,6 +101,8 @@ fun CustomerMasterScreen(
 ) {
     val context = LocalContext.current
     val customers by viewModel.customers.collectAsState()
+    val notas by viewModel.notas.collectAsState()
+    var isImporting by remember { mutableStateOf(false) }
 
     var searchQuery by remember { mutableStateOf("") }
     var customerToEdit by remember { mutableStateOf<Customer?>(null) }
@@ -173,18 +176,60 @@ fun CustomerMasterScreen(
                         }
                     }
 
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .testTag("customer_master_close_button")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup Database Pelanggan",
-                            tint = TextGray,
-                            modifier = Modifier.size(22.dp)
-                        )
+                        if (notas.isNotEmpty() && onSelectCustomer == null) {
+                            Surface(
+                                modifier = Modifier.clickable(enabled = !isImporting) {
+                                    isImporting = true
+                                    viewModel.importCustomersFromNotas { count ->
+                                        isImporting = false
+                                        if (count > 0) {
+                                            Toast.makeText(context, "Berhasil mengimpor/memperbarui $count kontak dari riwayat nota!", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Semua kontak dari nota sudah tersimpan di database.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = AccentBlue.copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Download,
+                                        contentDescription = null,
+                                        tint = Color(0xFF7DE3FF),
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Text(
+                                        text = if (isImporting) "Mengimpor..." else "Impor",
+                                        style = NotaTheme.typography.label.copy(fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
+                                        color = Color(0xFF7DE3FF)
+                                    )
+                                }
+                            }
+                        }
+
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .testTag("customer_master_close_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup Database Pelanggan",
+                                tint = TextGray,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
 
