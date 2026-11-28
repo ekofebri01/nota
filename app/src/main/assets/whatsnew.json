@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.7",
+    "icon": "bar_chart",
+    "title": "Kartu Ringkasan Keuangan & Statistik 3 Kolom (v1.8.7)",
+    "description": "Kartu Ringkasan Keuangan kini dilengkapi 3 kolom statistik tersinkronisasi: total Nota Dibuat (biru), pesanan Sudah Diambil (hijau), dan transaksi Sudah Lunas (kuning) yang otomatis menyesuaikan periode aktif."
+  },
+  {
     "version": "1.8.6",
     "icon": "phone",
     "title": "Auto-Simpan Kontak Pelanggan dari Nota (v1.8.6)",

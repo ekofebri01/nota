@@ -175,21 +175,8 @@ fun HomeScreen(
         searchQuery.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
     }
 
-    val filteredNotas = remember(selectedDateFilter, dateOffset, selectedStatusFilter, selectedPaymentFilter, queryTokens, notas) {
-        val list = notas.filter { nota ->
-            val matchesStatus = when (selectedStatusFilter) {
-                "Lunas" -> nota.status.equals("Lunas", ignoreCase = true)
-                "Tagihan" -> nota.status.equals("Tagihan", ignoreCase = true) || nota.status.equals("Piutang", ignoreCase = true)
-                "Belum Diambil" -> !nota.isPickedUp
-                "Sudah Diambil" -> nota.isPickedUp
-                else -> true
-            }
-
-            val matchesPayment = when (selectedPaymentFilter) {
-                "Semua" -> true
-                else -> getPaymentCategory(nota.paymentMethod).equals(selectedPaymentFilter, ignoreCase = true)
-            }
-
+    val periodNotas = remember(selectedDateFilter, dateOffset, queryTokens, notas) {
+        notas.filter { nota ->
             val matchesDate = if (selectedDateFilter == "All Time") true else {
                 try {
                     val date = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale("id", "ID")).parse(nota.date)
@@ -228,7 +215,42 @@ fun HomeScreen(
                 queryTokens.all { token -> searchableText.contains(token) }
             }
 
-            matchesStatus && matchesPayment && matchesDate && matchesSearch
+            matchesDate && matchesSearch
+        }
+    }
+
+    val totalOmzet = remember(periodNotas) {
+        periodNotas.filter { it.status.equals("Lunas", ignoreCase = true) }.sumOf { nota ->
+            nota.calculateSubtotal()
+        }
+    }
+
+    val totalPiutang = remember(periodNotas) {
+        periodNotas.filter { it.status.equals("Tagihan", ignoreCase = true) || it.status.equals("Piutang", ignoreCase = true) }.sumOf { nota ->
+            nota.calculateSubtotal()
+        }
+    }
+
+    val countNotaDibuat = remember(periodNotas) { periodNotas.size }
+    val countSudahDiambil = remember(periodNotas) { periodNotas.count { it.isPickedUp } }
+    val countSudahLunas = remember(periodNotas) { periodNotas.count { it.status.equals("Lunas", ignoreCase = true) } }
+
+    val filteredNotas = remember(periodNotas, selectedStatusFilter, selectedPaymentFilter) {
+        val list = periodNotas.filter { nota ->
+            val matchesStatus = when (selectedStatusFilter) {
+                "Lunas" -> nota.status.equals("Lunas", ignoreCase = true)
+                "Tagihan" -> nota.status.equals("Tagihan", ignoreCase = true) || nota.status.equals("Piutang", ignoreCase = true)
+                "Belum Diambil" -> !nota.isPickedUp
+                "Sudah Diambil" -> nota.isPickedUp
+                else -> true
+            }
+
+            val matchesPayment = when (selectedPaymentFilter) {
+                "Semua" -> true
+                else -> getPaymentCategory(nota.paymentMethod).equals(selectedPaymentFilter, ignoreCase = true)
+            }
+
+            matchesStatus && matchesPayment
         }
 
         list.sortedWith(
@@ -240,14 +262,6 @@ fun HomeScreen(
                 } catch (e: Exception) { 0L }
             }.thenByDescending { it.id }
         )
-    }
-
-    val totalOmzet = filteredNotas.filter { it.status.equals("Lunas", ignoreCase = true) }.sumOf { nota ->
-        nota.calculateSubtotal()
-    }
-
-    val totalPiutang = filteredNotas.filter { it.status.equals("Tagihan", ignoreCase = true) || it.status.equals("Piutang", ignoreCase = true) }.sumOf { nota ->
-        nota.calculateSubtotal()
     }
 
     Scaffold(
@@ -298,53 +312,40 @@ fun HomeScreen(
                     )
                 }
 
-                // Compact Financial Summary Card (Fixed)
+                // Compact Financial & Activity Summary Card (Fixed)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = ProCardSurface),
                     border = BorderStroke(1.dp, CardBorderGradient)
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    "RINGKASAN KEUANGAN",
-                                    style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp),
-                                    color = TextMuted
-                                )
-                                Surface(
-                                    shape = RoundedCornerShape(5.dp),
-                                    color = AccentBlue.copy(alpha = 0.2f)
-                                ) {
-                                    Text(
-                                        "Subtotal Murni",
-                                        style = NotaTheme.typography.label.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium),
-                                        color = AccentBlue,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                    )
-                                }
-                            }
+                            Text(
+                                "RINGKASAN KEUANGAN",
+                                style = NotaTheme.typography.label.copy(fontSize = 10.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp),
+                                color = TextMuted
+                            )
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = AccentEmerald.copy(alpha = 0.2f)
+                                color = AccentEmerald.copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.35f))
                             ) {
                                 Text(
                                     if (queryTokens.isNotEmpty()) "Filter Cari" else "Aktif",
                                     style = NotaTheme.typography.label.copy(fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold),
                                     color = AccentEmerald,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(5.dp))
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -352,18 +353,104 @@ fun HomeScreen(
                         ) {
                             Column {
                                 Text("Total Omzet Lunas", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp), color = TextGray)
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     "Rp ${formatCurrency(totalOmzet)}",
-                                    style = NotaTheme.typography.title.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
-                                    color = AccentEmerald
+                                    style = NotaTheme.typography.title.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                                    color = Color(0xFF10C48C)
                                 )
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("Total Tagihan", style = NotaTheme.typography.label.copy(fontSize = 10.5.sp), color = TextGray)
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     "Rp ${formatCurrency(totalPiutang)}",
-                                    style = NotaTheme.typography.title.copy(fontSize = 16.5.sp, fontWeight = FontWeight.Bold),
-                                    color = AccentAmber
+                                    style = NotaTheme.typography.title.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                                    color = Color(0xFFFFB020)
+                                )
+                            }
+                        }
+
+                        // Garis pemisah tipis
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            thickness = 0.8.dp,
+                            color = ProBorder.copy(alpha = 0.65f)
+                        )
+
+                        // 3 Kolom Sejajar: Nota Dibuat (Biru), Sudah Diambil (Hijau), Sudah Lunas (Kuning)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 1. Nota Dibuat (Biru)
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { selectedStatusFilter = "Semua" }
+                                    .padding(vertical = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "$countNotaDibuat",
+                                    style = NotaTheme.typography.heading.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                                    color = Color(0xFF60A5FA)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Nota Dibuat",
+                                    style = NotaTheme.typography.label.copy(fontSize = 10.5.sp),
+                                    color = TextGray
+                                )
+                            }
+
+                            // 2. Sudah Diambil (Hijau)
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        selectedStatusFilter = if (selectedStatusFilter == "Sudah Diambil") "Semua" else "Sudah Diambil"
+                                    }
+                                    .padding(vertical = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "$countSudahDiambil",
+                                    style = NotaTheme.typography.heading.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                                    color = Color(0xFF10C48C)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Sudah Diambil",
+                                    style = NotaTheme.typography.label.copy(fontSize = 10.5.sp),
+                                    color = TextGray
+                                )
+                            }
+
+                            // 3. Sudah Lunas (Kuning)
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        selectedStatusFilter = if (selectedStatusFilter == "Lunas") "Semua" else "Lunas"
+                                    }
+                                    .padding(vertical = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "$countSudahLunas",
+                                    style = NotaTheme.typography.heading.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                                    color = Color(0xFFFFD166)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Sudah Lunas",
+                                    style = NotaTheme.typography.label.copy(fontSize = 10.5.sp),
+                                    color = TextGray
                                 )
                             }
                         }

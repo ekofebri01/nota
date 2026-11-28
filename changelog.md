@@ -4,6 +4,14 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.8.7] — Ringkasan Keuangan & Statistik 3 Kolom Sinkron (2026-11-28)
+- **Desain Baru Kartu Ringkasan Keuangan**: Menggabungkan metrik keuangan (**Total Omzet Lunas** & **Total Tagihan**) dengan 3 kolom statistik aktivitas berdesain modern dan pemisah tipis.
+- **3 Kolom Statistik Sejajar**: Menampilkan angka jumlah **Nota Dibuat** (biru), **Sudah Diambil** (hijau), dan **Sudah Lunas** (kuning) secara elegan tanpa ikon yang memenuhi kartu.
+- **Sinkronisasi Penuh dengan Periode & Filter**: Ketiga statistik selalu tersinkronisasi otomatis dengan pilihan periode aktif (*Harian*, *Bulanan*, *Tahunan*, *All Time*) dan kata kunci pencarian.
+- **Filter Cepat 1-Sentuh**: Mengetuk salah satu dari 3 kolom statistik langsung memfilter status daftar nota di bawahnya (*Semua*, *Sudah Diambil*, *Lunas*).
+
+---
+
 ## [v1.8.6] — Auto-Simpan Kontak Pelanggan dari Nota (2026-11-28)
 - **Auto-Simpan Kontak Pelanggan**: Setiap kali membuat atau mengedit nota transaksi, kontak pelanggan (nama, nomor telepon, dan alamat) otomatis tersimpan ke **Database Kontak Pelanggan** jika belum terdaftar.
 - **Pembaruan Otomatis Kontak Tersimpan**: Jika nama pelanggan sudah ada di database namun nomor HP atau alamatnya masih kosong dan di nota diisi, data kontak pelanggan tersebut otomatis dilengkapi.
