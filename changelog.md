@@ -4,6 +4,11 @@ Catatan lengkap perkembangan dan pembaruan aplikasi **Nota Kasir Pro** dari awal
 
 ---
 
+## [v1.8.4] — Pembaruan Aplikasi (2026-11-28)
+- feat: tampilan futuristik (tema, border gradien, glow, splash)
+
+---
+
 ## [v1.8.3] — Pembaruan Aplikasi (2026-11-28)
 - feat: saran kategori tersimpan saat mengetik di form produk
 

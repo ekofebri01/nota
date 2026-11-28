@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.4",
+    "icon": "new_releases",
+    "title": "Pembaruan Aplikasi (v1.8.4)",
+    "description": "feat: tampilan futuristik (tema, border gradien, glow, splash)."
+  },
+  {
     "version": "1.8.3",
     "icon": "new_releases",
     "title": "Pembaruan Aplikasi (v1.8.3)",
