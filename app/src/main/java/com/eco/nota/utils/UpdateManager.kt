@@ -145,18 +145,6 @@ object UpdateManager {
                         break
                     }
                 }
-                if (apkDownloadUrl == null) {
-                    for (i in 0 until assetsArray.length()) {
-                        val asset = assetsArray.getJSONObject(i)
-                        val name = asset.optString("name", "")
-                        if (name.endsWith(".bin", ignoreCase = true)) {
-                            apkDownloadUrl = asset.optString("browser_download_url", "").takeIf { it.isNotBlank() }
-                            apkFileName = name.substringBeforeLast(".") + ".apk"
-                            apkSize = asset.optLong("size", 0L)
-                            break
-                        }
-                    }
-                }
             }
 
             val hasUpdate = isNewerVersion(tagName, currentVersion)
