@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -63,6 +64,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -412,6 +414,7 @@ fun ProductMasterScreen(
     if (showAddDialog || productToEdit != null) {
         ProductFormDialog(
             initialProduct = productToEdit,
+            existingCategories = categories.drop(1), // buang "Semua"
             onDismiss = {
                 showAddDialog = false
                 productToEdit = null
@@ -592,6 +595,7 @@ private fun ProductItemCard(
 @Composable
 fun ProductFormDialog(
     initialProduct: Product? = null,
+    existingCategories: List<String> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (Product) -> Unit
 ) {
@@ -599,6 +603,18 @@ fun ProductFormDialog(
     var priceText by remember { mutableStateOf(if (initialProduct != null && initialProduct.price > 0) initialProduct.price.toString() else "") }
     var unit by remember { mutableStateOf(initialProduct?.unit?.ifBlank { "Pcs" } ?: "Pcs") }
     var category by remember { mutableStateOf(initialProduct?.category ?: "") }
+    var categoryFocused by remember { mutableStateOf(false) }
+
+    // Saran kategori yang sudah tersimpan, difilter sesuai teks yang sedang diketik
+    val categorySuggestions = remember(category, existingCategories) {
+        val query = category.trim()
+        existingCategories
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinctBy { it.lowercase() }
+            .filter { query.isBlank() || it.contains(query, ignoreCase = true) }
+            .sortedBy { it.lowercase() }
+    }
     var code by remember { mutableStateOf(initialProduct?.code ?: "") }
 
     val quickUnits = listOf("Pcs", "Pack", "Slop", "Bungkus", "Kg", "Box", "Botol", "Lusin", "Gram", "Unit", "Meter", "Porsi")
@@ -619,6 +635,7 @@ fun ProductFormDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -754,7 +771,9 @@ fun ProductFormDialog(
                             value = category,
                             onValueChange = { category = it },
                             placeholder = { Text("Contoh: Rokok / Minuman", color = TextMuted, fontSize = 12.sp) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { categoryFocused = it.isFocused },
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = AccentBlue,
@@ -786,6 +805,40 @@ fun ProductFormDialog(
                             ),
                             singleLine = true
                         )
+                    }
+                }
+
+                // Preview kategori yang sudah tersimpan (muncul saat kolom Kategori diketik/difokus)
+                if (categoryFocused && categorySuggestions.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "KATEGORI TERSIMPAN",
+                            style = NotaTheme.typography.label.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            color = TextMuted
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            categorySuggestions.forEach { c ->
+                                val isSelected = category.trim().equals(c, ignoreCase = true)
+                                Surface(
+                                    modifier = Modifier.clickable { category = c },
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = if (isSelected) AccentBlue.copy(alpha = 0.25f) else ProCardSurfaceLight,
+                                    border = BorderStroke(1.dp, if (isSelected) AccentBlue else ProBorder)
+                                ) {
+                                    Text(
+                                        text = c,
+                                        style = NotaTheme.typography.label.copy(fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
+                                        color = if (isSelected) Color(0xFFA5B4FC) else TextGray,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
